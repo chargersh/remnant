@@ -3,14 +3,20 @@
 import { env } from "@remnant/env/web";
 import { Toaster } from "@remnant/ui/components/sonner";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import type { ReactNode } from "react";
 
 import { ThemeProvider } from "./theme-provider";
 
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      disableTransitionOnChange
+      enableSystem
+    >
       <ConvexProvider client={convex}>{children}</ConvexProvider>
       <Toaster richColors />
     </ThemeProvider>
