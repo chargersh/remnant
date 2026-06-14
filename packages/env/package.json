@@ -6,6 +6,9 @@
   "exports": {
     "./web": "./src/web.ts"
   },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.13.1",
     "dotenv": "catalog:",
@@ -13,6 +16,7 @@
   },
   "devDependencies": {
     "@remnant/config": "workspace:*",
+    "@types/node": "^24.3.0",
     "typescript": "catalog:"
   }
 }

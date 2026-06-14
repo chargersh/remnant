@@ -72,6 +72,7 @@
       },
       "devDependencies": {
         "@remnant/config": "workspace:*",
+        "@types/node": "^24.3.0",
         "typescript": "catalog:",
       },
     },
