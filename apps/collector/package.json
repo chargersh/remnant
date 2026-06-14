@@ -8,9 +8,7 @@
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
-    "@remnant/env": "workspace:*",
-    "dotenv": "catalog:",
-    "effect": "^4.0.0-beta.83"
+    "@remnant/env": "workspace:*"
   },
   "devDependencies": {
     "@remnant/config": "workspace:*",
