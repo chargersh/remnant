@@ -10,7 +10,7 @@ export interface TelegramClientConfig {
   readonly apiHash: string;
   readonly apiId: number;
   readonly clientParams?: TelegramClientParams;
-  readonly session: string;
+  readonly session: string | StringSession;
 }
 
 export class TelegramClientCreationError extends Data.TaggedError(
@@ -56,7 +56,9 @@ const createClient = (config: TelegramClientConfig) =>
   Effect.try({
     try: () =>
       new GramJsTelegramClient(
-        new StringSession(config.session),
+        typeof config.session === "string"
+          ? new StringSession(config.session)
+          : config.session,
         config.apiId,
         config.apiHash,
         config.clientParams ?? {}
@@ -76,13 +78,16 @@ const disconnectClient = (client: GramJsTelegramClient) =>
     )
   );
 
+export const makeTelegramClientResource = Effect.fn(
+  "TelegramClient.makeResource"
+)(function* (config: TelegramClientConfig) {
+  return yield* Effect.acquireRelease(createClient(config), disconnectClient);
+});
+
 export const makeTelegramClient = Effect.fn("TelegramClient.make")(function* (
   config: TelegramClientConfig
 ) {
-  const client = yield* Effect.acquireRelease(
-    createClient(config),
-    disconnectClient
-  );
+  const client = yield* makeTelegramClientResource(config);
 
   const connected = yield* Effect.tryPromise({
     try: () => client.connect(),

@@ -29,6 +29,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "check": "bun run typecheck && bun run lint",
+    "auth:collector": "bun run --cwd apps/collector auth",
     "dev:collector": "turbo -F collector dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @remnant/backend dev",
