@@ -8,7 +8,9 @@
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
-    "@remnant/env": "workspace:*"
+    "@remnant/env": "workspace:*",
+    "effect": "4.0.0-beta.83",
+    "telegram": "^2.26.22"
   },
   "devDependencies": {
     "@remnant/config": "workspace:*",

@@ -17,6 +17,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ],
     "types": ["node"]
   }
 }
