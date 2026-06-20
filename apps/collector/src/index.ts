@@ -70,12 +70,14 @@ const collectorProgram = Effect.gen(function* () {
     (dialog) =>
       Effect.logInfo("Telegram dialog", {
         archived: dialog.archived,
-        id: dialog.id,
+        dialogId: dialog.dialogId,
         name: dialog.name,
+        peerId: dialog.peerId,
+        peerKind: dialog.peerKind,
         pinned: dialog.pinned,
         type: dialog.type,
         unreadCount: dialog.unreadCount,
-        username: dialog.username ?? "none",
+        username: "username" in dialog ? (dialog.username ?? "none") : "none",
       }),
     { discard: true }
   );
