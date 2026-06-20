@@ -25,6 +25,7 @@ export const dialogSyncRunValidator = v.object({
 
 export const dialogSyncBatchValidator = v.object({
   batchIndex: v.number(),
+  contentHash: v.string(),
   dialogCount: v.number(),
   receivedAt: v.number(),
   runId: v.id("dialogSyncRuns"),

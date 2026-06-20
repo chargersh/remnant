@@ -98,10 +98,15 @@ const commonDialogFields = (
   name: string
 ) => {
   const folderId = dialog.folderId;
+  const dialogId = dialog.id?.toString();
+
+  if (dialogId === undefined) {
+    throw new Error("Dialog is missing id");
+  }
 
   return {
     archived: dialog.archived,
-    dialogId: dialog.id?.toString() ?? "",
+    dialogId,
     ...(typeof folderId === "number" ? { folderId } : {}),
     name,
     peerId: entity.id.toString(),

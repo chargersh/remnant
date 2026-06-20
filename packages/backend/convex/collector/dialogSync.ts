@@ -14,6 +14,21 @@ import {
 
 const dialogBatchSize = 100;
 
+const dialogBatchContentHash = (dialogs: readonly TelegramDialogSnapshot[]) =>
+  JSON.stringify(
+    dialogs
+      .map((dialog) => [dialog.peerKind, dialog.peerId, dialog.dialogId])
+      .sort(
+        (
+          [leftKind, leftPeerId, leftDialogId],
+          [rightKind, rightPeerId, rightDialogId]
+        ) =>
+          `${leftKind}:${leftPeerId}:${leftDialogId}`.localeCompare(
+            `${rightKind}:${rightPeerId}:${rightDialogId}`
+          )
+      )
+  );
+
 const requireAccount = async (ctx: MutationCtx, telegramAccountId: string) => {
   const account = await ctx.db
     .query("telegramAccounts")
@@ -229,9 +244,13 @@ export const ingestBatch = collectorMutation({
         query.eq("runId", run._id).eq("batchIndex", args.batchIndex)
       )
       .unique();
+    const contentHash = dialogBatchContentHash(args.dialogs);
 
     if (existingBatch) {
-      if (existingBatch.dialogCount !== args.dialogs.length) {
+      if (
+        existingBatch.dialogCount !== args.dialogs.length ||
+        existingBatch.contentHash !== contentHash
+      ) {
         throw new ConvexError("Dialog batch retry does not match");
       }
 
@@ -250,6 +269,7 @@ export const ingestBatch = collectorMutation({
 
     await ctx.db.insert("dialogSyncBatches", {
       batchIndex: args.batchIndex,
+      contentHash,
       dialogCount: args.dialogs.length,
       receivedAt: args.observedAt,
       runId: run._id,
