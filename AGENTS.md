@@ -18,6 +18,7 @@ Current stack:
 
 - Install dependencies: `bun install`
 - Add packages: `bun add <package>`. Do not use `npm`, `pnpm`, `yarn`.
+- Do not manually add dependency versions to `package.json`. Use `bun add` so Bun resolves and records the correct current version.
 - Check changed code: `bun run check`
 - Fix lint/format issues: `bun run lint:fix`
 - Do not run `bun run dev`, `bun run build`, or `bun run start` unless the user asks. Assume the dev server is already running.

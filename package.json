@@ -29,6 +29,8 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "check": "bun run typecheck && bun run lint",
+    "auth:collector": "bun run --cwd apps/collector auth",
+    "dev:collector": "turbo -F collector dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @remnant/backend dev",
     "dev:setup": "turbo -F @remnant/backend dev:setup"
@@ -40,6 +42,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
+    "@effect/language-service": "^0.86.2",
     "@remnant/config": "workspace:*",
     "turbo": "^2.9.16",
     "typescript": "catalog:",
