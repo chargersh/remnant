@@ -96,16 +96,25 @@ const commonDialogFields = (
   dialog: Dialog,
   entity: Api.User | Api.TypeChat,
   name: string
-) => ({
-  archived: dialog.archived,
-  dialogId: dialog.id?.toString() ?? "",
-  ...(dialog.folderId === undefined ? {} : { folderId: dialog.folderId }),
-  name,
-  peerId: entity.id.toString(),
-  pinned: dialog.pinned,
-  unreadCount: dialog.unreadCount,
-  unreadMentionsCount: dialog.unreadMentionsCount,
-});
+) => {
+  const folderId = dialog.folderId;
+  const dialogId = dialog.id?.toString();
+
+  if (dialogId === undefined) {
+    throw new Error("Dialog is missing id");
+  }
+
+  return {
+    archived: dialog.archived,
+    dialogId,
+    ...(typeof folderId === "number" ? { folderId } : {}),
+    name,
+    peerId: entity.id.toString(),
+    pinned: dialog.pinned,
+    unreadCount: dialog.unreadCount,
+    unreadMentionsCount: dialog.unreadMentionsCount,
+  };
+};
 
 const normalizeChatDialog = (
   dialog: Dialog,
