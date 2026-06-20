@@ -12,6 +12,22 @@ Current required web env:
 NEXT_PUBLIC_CONVEX_URL=
 ```
 
+The collector requires:
+
+```env
+COLLECTOR_API_KEY=
+CONVEX_URL=
+TELEGRAM_API_HASH=
+TELEGRAM_API_ID=
+TELEGRAM_SESSION=
+```
+
+Configure the same `COLLECTOR_API_KEY` value on the Convex deployment:
+
+```bash
+convex env set COLLECTOR_API_KEY <secret>
+```
+
 Keep web env files in `apps/web`:
 
 ```text

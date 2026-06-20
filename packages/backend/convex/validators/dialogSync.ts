@@ -16,6 +16,7 @@ export const dialogSyncRunValidator = v.object({
   error: v.optional(v.string()),
   markedMissingCount: v.number(),
   receivedBatchCount: v.number(),
+  receivedBatchIndexSum: v.number(),
   receivedDialogCount: v.number(),
   startedAt: v.number(),
   status: dialogSyncRunStatusValidator,

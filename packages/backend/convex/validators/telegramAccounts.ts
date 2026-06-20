@@ -21,5 +21,14 @@ export const telegramAccountValidator = v.object({
   username: v.optional(v.string()),
 });
 
+export const telegramAccountProfileValidator = v.object({
+  displayName: v.string(),
+  telegramAccountId: telegramIdValidator,
+  username: v.optional(v.string()),
+});
+
 export type DialogSyncStatus = Infer<typeof dialogSyncStatusValidator>;
 export type TelegramAccount = Infer<typeof telegramAccountValidator>;
+export type TelegramAccountProfile = Infer<
+  typeof telegramAccountProfileValidator
+>;
