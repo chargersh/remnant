@@ -29,11 +29,22 @@ export class TelegramAccountLookupError extends Data.TaggedError(
   readonly cause: unknown;
 }> {}
 
+const isRetryableCause = (cause: unknown) => {
+  if (cause instanceof ConvexError) {
+    return false;
+  }
+
+  return !(
+    cause instanceof Error &&
+    (cause.message.includes("ArgumentValidationError") ||
+      cause.message.includes("Server Error"))
+  );
+};
+
 const retryPolicy = {
   schedule: Schedule.jittered(Schedule.exponential("250 millis")),
   times: 5,
-  while: (error: ConvexDialogSyncError) =>
-    !(error.cause instanceof ConvexError),
+  while: (error: ConvexDialogSyncError) => isRetryableCause(error.cause),
 } as const;
 
 const runMutation = <A>(
@@ -100,7 +111,11 @@ export const syncTelegramDialogs = Effect.fn("ConvexDialogSync.sync")(
       })
     );
 
-    return { syncId };
+    return {
+      syncId,
+      totalBatches: batches.length,
+      totalDialogs: dialogs.length,
+    };
   }
 );
 

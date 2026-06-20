@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "auth": "bun run src/auth.ts",
+    "sync-dialogs": "bun run src/index.ts",
     "typecheck": "tsc --noEmit",
     "dev": "bun run src/index.ts"
   },

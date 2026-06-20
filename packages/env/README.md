@@ -25,8 +25,29 @@ TELEGRAM_SESSION=
 Configure the same `COLLECTOR_API_KEY` value on the Convex deployment:
 
 ```bash
-convex env set COLLECTOR_API_KEY <secret>
+cd packages/backend
+bunx convex env set COLLECTOR_API_KEY <secret>
 ```
+
+Generate a suitable secret with:
+
+```bash
+openssl rand -hex 32
+```
+
+Copy `CONVEX_URL` from `packages/backend/.env.local` into
+`apps/collector/.env.local`.
+
+Once the collector and Convex deployment use the same API key, run one complete
+dialog synchronization from the repository root:
+
+```bash
+bun run sync:dialogs
+```
+
+The command fetches all normalized Telegram dialogs, submits them to Convex in
+batches, asks Convex to reconcile missing dialogs, and then exits. Scheduled
+reconciliation continues inside Convex after the collector exits.
 
 Keep web env files in `apps/web`:
 
