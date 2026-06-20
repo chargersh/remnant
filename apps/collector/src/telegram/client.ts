@@ -89,12 +89,12 @@ export const makeTelegramClient = Effect.fn("TelegramClient.make")(function* (
 ) {
   const client = yield* makeTelegramClientResource(config);
 
-  const connected = yield* Effect.tryPromise({
+  yield* Effect.tryPromise({
     try: () => client.connect(),
     catch: (cause) => new TelegramConnectionError({ cause }),
   });
 
-  if (!connected) {
+  if (!client.connected) {
     return yield* new TelegramConnectionError({
       cause: "GramJS did not establish a Telegram connection.",
     });
