@@ -8,22 +8,19 @@ import {
   SidebarRail,
 } from "@remnant/ui/components/sidebar";
 import {
-  AudioLinesIcon,
   BookOpenIcon,
   BotIcon,
   FrameIcon,
-  GalleryVerticalEndIcon,
   MapIcon,
   PieChartIcon,
   Settings2Icon,
-  TerminalIcon,
   TerminalSquareIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
+import { AccountSwitcher } from "./account-switcher";
 import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
-import { TeamSwitcher } from "./team-switcher";
 
 // This is sample data.
 const data = {
@@ -32,23 +29,6 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <GalleryVerticalEndIcon />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <AudioLinesIcon />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <TerminalIcon />,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Playground",
@@ -159,7 +139,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <AccountSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
