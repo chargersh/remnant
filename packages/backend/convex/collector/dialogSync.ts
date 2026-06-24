@@ -14,20 +14,43 @@ import {
 
 const dialogBatchSize = 100;
 
-const dialogBatchContentHash = (dialogs: readonly TelegramDialogSnapshot[]) =>
-  JSON.stringify(
+const toHex = (bytes: ArrayBuffer) =>
+  Array.from(new Uint8Array(bytes), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+
+const dialogBatchContentHash = async (
+  dialogs: readonly TelegramDialogSnapshot[]
+) => {
+  const content = JSON.stringify(
     dialogs
-      .map((dialog) => [dialog.peerKind, dialog.peerId, dialog.dialogId])
+      .map(
+        (dialog) => [dialog.peerKind, dialog.peerId, dialog.dialogId] as const
+      )
       .sort(
         (
           [leftKind, leftPeerId, leftDialogId],
           [rightKind, rightPeerId, rightDialogId]
-        ) =>
-          `${leftKind}:${leftPeerId}:${leftDialogId}`.localeCompare(
-            `${rightKind}:${rightPeerId}:${rightDialogId}`
-          )
+        ) => {
+          if (leftKind !== rightKind) {
+            return leftKind.localeCompare(rightKind);
+          }
+
+          if (leftPeerId !== rightPeerId) {
+            return leftPeerId.localeCompare(rightPeerId);
+          }
+
+          return leftDialogId.localeCompare(rightDialogId);
+        }
       )
   );
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(content)
+  );
+
+  return toHex(digest);
+};
 
 const requireAccount = async (ctx: MutationCtx, telegramAccountId: string) => {
   const account = await ctx.db
@@ -244,7 +267,7 @@ export const ingestBatch = collectorMutation({
         query.eq("runId", run._id).eq("batchIndex", args.batchIndex)
       )
       .unique();
-    const contentHash = dialogBatchContentHash(args.dialogs);
+    const contentHash = await dialogBatchContentHash(args.dialogs);
 
     if (existingBatch) {
       if (

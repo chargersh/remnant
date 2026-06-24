@@ -17,12 +17,20 @@ Current stack:
 ## Commands
 
 - Install dependencies: `bun install`
-- Add packages: `bun add <package>`. Do not use `npm`, `pnpm`, `yarn`.
-- Do not manually add dependency versions to `package.json`. Use `bun add` so Bun resolves and records the correct current version.
+- Add packages: `bun add <package>`. Remove packages: `bun remove <package>`. Do not use `npm`, `pnpm`, or `yarn`.
 - Check changed code: `bun run check`
 - Fix lint/format issues: `bun run lint:fix`
 - Do not run `bun run dev`, `bun run build`, or `bun run start` unless the user asks. Assume the dev server is already running.
 - After implementing a change, run `bun run check` as the default feedback loop. Do not run separate typecheck or lint commands unless there is a specific reason.
+
+## Package-Managed and Generated Files
+
+- Do not manually edit `package.json` files or `bun.lock`.
+- Manage `package.json` with Bun commands (`bun add`, `bun remove`, `bun install`, or `bun pm pkg`) from the appropriate workspace.
+- Do not manually edit Convex generated files under `packages/backend/convex/_generated`.
+- Assume the running Convex dev server keeps generated files current. If stale or missing Convex generated files cause errors or block validation, regenerate them from `packages/backend` with `bunx convex dev --once`.
+- Do not edit generated/cache directories such as `.next` or `.turbo`; let their owning tools regenerate them.
+- Prefer the owning tool's documented command whenever a file is generated or package-managed. Do not patch generated output to work around stale caches.
 
 ## Code Style
 

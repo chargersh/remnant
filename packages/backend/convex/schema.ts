@@ -5,7 +5,6 @@ import {
 } from "./validators/dialogSync";
 import { telegramAccountValidator } from "./validators/telegramAccounts";
 import { telegramDialogValidator } from "./validators/telegramDialogs";
-import { todoValidator } from "./validators/todos";
 
 export default defineSchema({
   dialogSyncBatches: defineTable(dialogSyncBatchValidator).index(
@@ -37,5 +36,4 @@ export default defineSchema({
       "type",
       "sourceStatus",
     ]),
-  todos: defineTable(todoValidator),
 });
