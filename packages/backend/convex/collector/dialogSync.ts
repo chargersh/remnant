@@ -135,7 +135,7 @@ const upsertDialog = async (
   await ctx.db.insert("telegramDialogs", {
     ...telegramFields,
     accountId,
-    archivingEnabled: false,
+    trackingEnabled: false,
     firstSeenAt: observedAt,
     lastSeenAt: observedAt,
     lastSeenSyncId: syncId,

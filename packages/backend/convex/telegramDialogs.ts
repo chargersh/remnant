@@ -28,8 +28,8 @@ export const listTracked = query({
   handler: async (ctx, args) => {
     const dialogs = await ctx.db
       .query("telegramDialogs")
-      .withIndex("by_accountId_and_archivingEnabled_and_sourceStatus", (q) =>
-        q.eq("accountId", args.accountId).eq("archivingEnabled", true)
+      .withIndex("by_accountId_and_trackingEnabled_and_sourceStatus", (q) =>
+        q.eq("accountId", args.accountId).eq("trackingEnabled", true)
       )
       .collect();
 

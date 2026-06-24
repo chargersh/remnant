@@ -8,16 +8,3 @@ export const dialogHandle = (dialog: TrackedDialog) =>
 
 export const accountInitial = (account: TelegramAccount) =>
   account.displayName.trim().charAt(0).toUpperCase() || "?";
-
-export const archiveNavigationItems = [
-  {
-    href: "/dashboard/dialogs/all",
-    label: "All dialogs",
-    value: "all-dialogs",
-  },
-  {
-    href: "/dashboard/sync",
-    label: "Sync",
-    value: "sync",
-  },
-] as const;
