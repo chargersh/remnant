@@ -10,9 +10,9 @@ import {
 } from "@remnant/ui/components/sidebar";
 import { useQuery } from "convex/react";
 import { type ComponentProps, useEffect, useState } from "react";
-import { AccountSwitcher } from "./components/account-switcher/account-switcher";
-import { NavUser } from "./components/nav-user/nav-user";
 import { SidebarNavigation } from "./components/navigation/sidebar-navigation";
+import { UserMenu } from "./components/sidebar-footer/user-menu";
+import { AccountMenu } from "./components/sidebar-header/account-menu";
 
 const user = {
   name: "shadcn",
@@ -38,7 +38,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <AccountSwitcher
+        <AccountMenu
           accounts={accounts}
           onSelectedAccountIdChange={setSelectedAccountId}
           selectedAccountId={selectedAccountId}
@@ -51,7 +51,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <UserMenu user={user} />
       </SidebarFooter>
     </Sidebar>
   );

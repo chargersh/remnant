@@ -3,12 +3,12 @@ import { DropdownMenuItem } from "@remnant/ui/components/dropdown-menu";
 import type { TelegramAccount } from "../../types";
 import { accountHandle, accountInitial } from "../../utils";
 
-interface AccountMenuItemProps {
+interface AccountOptionProps {
   account: TelegramAccount;
   onSelect: (accountId: Id<"telegramAccounts">) => void;
 }
 
-export function AccountMenuItem({ account, onSelect }: AccountMenuItemProps) {
+export function AccountOption({ account, onSelect }: AccountOptionProps) {
   return (
     <DropdownMenuItem
       className="gap-2 p-2"

@@ -13,15 +13,14 @@ import {
 } from "@remnant/ui/components/sidebar";
 import { ChevronsUpDownIcon } from "lucide-react";
 import type { SidebarUser } from "../../types";
-import { UserAvatar } from "./user-avatar";
+import { User } from "./user";
 import { UserMenuItems } from "./user-menu-items";
-import { UserSummary } from "./user-summary";
 
-interface NavUserProps {
+interface UserMenuProps {
   user: SidebarUser;
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function UserMenu({ user }: UserMenuProps) {
   const { isMobile } = useSidebar();
 
   return (
@@ -36,8 +35,7 @@ export function NavUser({ user }: NavUserProps) {
               />
             }
           >
-            <UserAvatar user={user} />
-            <UserSummary user={user} />
+            <User user={user} />
             <ChevronsUpDownIcon className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -49,8 +47,7 @@ export function NavUser({ user }: NavUserProps) {
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <UserAvatar user={user} />
-                  <UserSummary user={user} />
+                  <User user={user} />
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>

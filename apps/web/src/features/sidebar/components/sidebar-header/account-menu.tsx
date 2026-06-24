@@ -14,20 +14,20 @@ import {
 } from "@remnant/ui/components/sidebar";
 import { useMemo } from "react";
 import type { TelegramAccount } from "../../types";
-import { AccountMenuItem } from "./account-menu-item";
-import { AccountTriggerContent } from "./account-trigger-content";
+import { Account } from "./account";
+import { AccountOption } from "./account-option";
 
-interface AccountSwitcherProps {
+interface AccountMenuProps {
   accounts: TelegramAccount[] | undefined;
   onSelectedAccountIdChange: (accountId: Id<"telegramAccounts">) => void;
   selectedAccountId: Id<"telegramAccounts"> | undefined;
 }
 
-export function AccountSwitcher({
+export function AccountMenu({
   accounts,
   onSelectedAccountIdChange,
   selectedAccountId,
-}: AccountSwitcherProps) {
+}: AccountMenuProps) {
   const { isMobile } = useSidebar();
   const activeAccount = useMemo(
     () =>
@@ -49,7 +49,7 @@ export function AccountSwitcher({
               />
             }
           >
-            <AccountTriggerContent
+            <Account
               account={activeAccount}
               isLoading={accounts === undefined}
             />
@@ -65,7 +65,7 @@ export function AccountSwitcher({
                 Telegram accounts
               </DropdownMenuLabel>
               {accounts?.map((account) => (
-                <AccountMenuItem
+                <AccountOption
                   account={account}
                   key={account.accountId}
                   onSelect={onSelectedAccountIdChange}
