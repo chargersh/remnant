@@ -12,6 +12,7 @@ import type * as collector_dialogSync from "../collector/dialogSync.js";
 import type * as functions from "../functions.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as telegramAccounts from "../telegramAccounts.js";
+import type * as telegramDialogs from "../telegramDialogs.js";
 import type * as validators_dialogSync from "../validators/dialogSync.js";
 import type * as validators_telegram from "../validators/telegram.js";
 import type * as validators_telegramAccounts from "../validators/telegramAccounts.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   functions: typeof functions;
   healthCheck: typeof healthCheck;
   telegramAccounts: typeof telegramAccounts;
+  telegramDialogs: typeof telegramDialogs;
   "validators/dialogSync": typeof validators_dialogSync;
   "validators/telegram": typeof validators_telegram;
   "validators/telegramAccounts": typeof validators_telegramAccounts;
