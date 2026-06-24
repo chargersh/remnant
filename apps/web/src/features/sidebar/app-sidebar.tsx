@@ -20,10 +20,10 @@ import {
   TerminalSquareIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
-import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
-import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
+import { NavMain } from "./nav-main";
+import { NavProjects } from "./nav-projects";
+import { NavUser } from "./nav-user";
+import { TeamSwitcher } from "./team-switcher";
 
 // This is sample data.
 const data = {
