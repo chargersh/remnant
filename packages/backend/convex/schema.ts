@@ -26,9 +26,9 @@ export default defineSchema({
       "peerId",
     ])
     .index("by_accountId_and_sourceStatus", ["accountId", "sourceStatus"])
-    .index("by_accountId_and_archivingEnabled_and_sourceStatus", [
+    .index("by_accountId_and_trackingEnabled_and_sourceStatus", [
       "accountId",
-      "archivingEnabled",
+      "trackingEnabled",
       "sourceStatus",
     ])
     .index("by_accountId_and_type_and_sourceStatus", [
