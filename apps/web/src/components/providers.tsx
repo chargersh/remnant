@@ -2,6 +2,7 @@
 
 import { env } from "@remnant/env/web";
 import { Toaster } from "@remnant/ui/components/sonner";
+import { TooltipProvider } from "@remnant/ui/components/tooltip";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
 
@@ -17,7 +18,9 @@ export default function Providers({ children }: { children: ReactNode }) {
       disableTransitionOnChange
       enableSystem
     >
-      <ConvexProvider client={convex}>{children}</ConvexProvider>
+      <ConvexProvider client={convex}>
+        <TooltipProvider>{children}</TooltipProvider>
+      </ConvexProvider>
       <Toaster richColors />
     </ThemeProvider>
   );
