@@ -24,9 +24,9 @@ export function Account({ account, isLoading }: AccountProps) {
           {account?.displayName ??
             (isLoading ? "Loading accounts" : "No accounts")}
         </span>
-        <span className="truncate text-xs">
-          {account ? accountHandle(account) : "Telegram"}
-        </span>
+        {account ? (
+          <span className="truncate text-xs">{accountHandle(account)}</span>
+        ) : null}
       </div>
       <ChevronsUpDownIcon className="ml-auto" />
     </>
