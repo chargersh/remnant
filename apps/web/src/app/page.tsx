@@ -1,50 +1,20 @@
-"use client";
-import { api } from "@remnant/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+import { buttonVariants } from "@remnant/ui/components/button";
+import Link from "next/link";
 
 export default function Home() {
-  const healthCheck = useQuery(api.healthCheck.get);
-  const isLoading = healthCheck === undefined;
-  const isConnected = healthCheck === "OK";
-  let statusColorClass = "bg-red-500";
-  let statusText = "Error";
-
-  if (isLoading) {
-    statusColorClass = "bg-orange-400";
-    statusText = "Checking...";
-  } else if (isConnected) {
-    statusColorClass = "bg-green-500";
-    statusText = "Connected";
-  }
-
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-2">
-      <pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-      <div className="grid gap-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-2 font-medium">API Status</h2>
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${statusColorClass}`} />
-            <span className="text-muted-foreground text-sm">{statusText}</span>
-          </div>
-        </section>
-      </div>
-    </div>
+    <main className="flex min-h-full items-center justify-center px-4 py-16">
+      <section className="mx-auto flex max-w-xl flex-col items-center text-center">
+        <h1 className="text-balance font-semibold text-3xl tracking-normal sm:text-4xl">
+          The homepage is coming soon.
+        </h1>
+        <Link
+          className={buttonVariants({ className: "mt-8", size: "lg" })}
+          href="/dashboard"
+        >
+          Go to dashboard
+        </Link>
+      </section>
+    </main>
   );
 }
