@@ -30,7 +30,10 @@ export function NavUser({ user }: NavUserProps) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton className="aria-expanded:bg-muted" size="lg" />
+              <SidebarMenuButton
+                className="aria-expanded:bg-muted group-data-[collapsible=icon]:rounded-full"
+                size="lg"
+              />
             }
           >
             <UserAvatar user={user} />

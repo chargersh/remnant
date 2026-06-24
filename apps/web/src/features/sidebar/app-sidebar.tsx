@@ -7,7 +7,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
 } from "@remnant/ui/components/sidebar";
 import { useQuery } from "convex/react";
 import { type ComponentProps, useEffect, useState } from "react";
@@ -54,7 +53,6 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }
