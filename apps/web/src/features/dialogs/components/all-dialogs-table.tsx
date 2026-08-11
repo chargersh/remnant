@@ -20,15 +20,46 @@ import {
   allDialogsTableFeatures,
   createAllDialogsColumns,
 } from "./all-dialogs-columns";
-import { AllDialogsToolbar } from "./all-dialogs-toolbar";
+import {
+  AllDialogsToolbar,
+  type DialogAvailabilityFilter,
+  type DialogTypeFilter,
+} from "./all-dialogs-toolbar";
 
 export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   const setTracking = useMutation(api.telegramDialogs.setTracking);
   const setTrackingBulk = useMutation(api.telegramDialogs.setTrackingBulk);
+  const [searchValue, setSearchValue] = useState("");
+  const [typeFilters, setTypeFilters] = useState<ReadonlySet<DialogTypeFilter>>(
+    () => new Set()
+  );
+  const [availabilityFilters, setAvailabilityFilters] = useState<
+    ReadonlySet<DialogAvailabilityFilter>
+  >(() => new Set());
   const [pendingDialogIds, setPendingDialogIds] = useState<
     ReadonlySet<Id<"telegramDialogs">>
   >(() => new Set());
   const [isBulkPending, setIsBulkPending] = useState(false);
+  const filteredDialogs = useMemo(() => {
+    const query = normalizeSearchValue(searchValue);
+
+    return dialogs.filter((dialog) => {
+      const username = dialog.username
+        ? normalizeSearchValue(dialog.username)
+        : "";
+      const matchesSearch =
+        query.length === 0 ||
+        normalizeSearchValue(dialog.name).includes(query) ||
+        username.includes(query);
+      const matchesType =
+        typeFilters.size === 0 || typeFilters.has(getDialogType(dialog));
+      const matchesAvailability =
+        availabilityFilters.size === 0 ||
+        availabilityFilters.has(getDialogAvailability(dialog));
+
+      return matchesSearch && matchesType && matchesAvailability;
+    });
+  }, [availabilityFilters, dialogs, searchValue, typeFilters]);
 
   const handleSetTracking = useCallback(
     async (dialogId: Id<"telegramDialogs">, trackingEnabled: boolean) => {
@@ -59,7 +90,7 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   );
   const table = useTable({
     columns,
-    data: dialogs,
+    data: filteredDialogs,
     features: allDialogsTableFeatures,
     getRowId: (dialog) => dialog.dialogId,
   });
@@ -94,15 +125,33 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
     }
   };
 
+  const handleToggleTypeFilter = (filter: DialogTypeFilter) => {
+    setTypeFilters((current) => toggleSetValue(current, filter));
+  };
+
+  const handleToggleAvailabilityFilter = (filter: DialogAvailabilityFilter) => {
+    setAvailabilityFilters((current) => toggleSetValue(current, filter));
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <AllDialogsToolbar
-        dialogCount={dialogs.length}
+        availabilityFilters={availabilityFilters}
+        dialogCount={filteredDialogs.length}
         isBulkPending={isBulkPending}
         isRowMutationPending={isRowMutationPending}
+        onClearFilters={() => {
+          setTypeFilters(new Set());
+          setAvailabilityFilters(new Set());
+        }}
         onClearSelection={() => table.resetRowSelection(true)}
+        onSearchChange={setSearchValue}
         onSetBulkTracking={handleBulkTracking}
+        onToggleAvailabilityFilter={handleToggleAvailabilityFilter}
+        onToggleTypeFilter={handleToggleTypeFilter}
+        searchValue={searchValue}
         selectedCount={selectedCount}
+        typeFilters={typeFilters}
       />
       <Table>
         <TableHeader className="bg-muted/10">
@@ -128,25 +177,79 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow
-              data-state={row.getIsSelected() ? "selected" : undefined}
-              key={row.id}
-            >
-              {row.getAllCells().map((cell) => (
-                <TableCell
-                  className={columnClassName(cell.column.id)}
-                  key={cell.id}
-                >
-                  <table.FlexRender cell={cell} />
-                </TableCell>
-              ))}
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                data-state={row.getIsSelected() ? "selected" : undefined}
+                key={row.id}
+              >
+                {row.getAllCells().map((cell) => (
+                  <TableCell
+                    className={columnClassName(cell.column.id)}
+                    key={cell.id}
+                  >
+                    <table.FlexRender cell={cell} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                className="h-12 text-center text-muted-foreground"
+                colSpan={columns.length}
+              >
+                No dialogs found.
+              </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>
   );
+}
+
+function getDialogType(dialog: DialogListItem): DialogTypeFilter {
+  if (dialog.isSelf) {
+    return "saved";
+  }
+
+  if (dialog.isBot) {
+    return "bot";
+  }
+
+  return dialog.type === "user" ? "person" : dialog.type;
+}
+
+function getDialogAvailability(
+  dialog: DialogListItem
+): DialogAvailabilityFilter {
+  if (dialog.isDeleted) {
+    return "deleted";
+  }
+
+  return dialog.availability === "forbidden" ? "unavailable" : "available";
+}
+
+function toggleSetValue<Value>(values: ReadonlySet<Value>, value: Value) {
+  const nextValues = new Set(values);
+
+  if (nextValues.has(value)) {
+    nextValues.delete(value);
+  } else {
+    nextValues.add(value);
+  }
+
+  return nextValues;
+}
+
+function normalizeSearchValue(value: string) {
+  const trimmedValue = value.trim();
+  const valueWithoutAt = trimmedValue.startsWith("@")
+    ? trimmedValue.slice(1)
+    : trimmedValue;
+
+  return valueWithoutAt.toLocaleLowerCase();
 }
 
 function columnClassName(columnId: string) {

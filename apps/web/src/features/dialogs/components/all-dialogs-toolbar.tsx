@@ -1,32 +1,120 @@
 import { Button } from "@remnant/ui/components/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@remnant/ui/components/dropdown-menu";
 import { Input } from "@remnant/ui/components/input";
-import { ChevronDownIcon, ListFilterIcon, SearchIcon } from "lucide-react";
+import {
+  BookmarkIcon,
+  BotIcon,
+  CheckCircle2Icon,
+  ChevronDownIcon,
+  ListFilterIcon,
+  LockKeyholeIcon,
+  MegaphoneIcon,
+  MessagesSquareIcon,
+  SearchIcon,
+  UserRoundIcon,
+  UserRoundXIcon,
+} from "lucide-react";
+
+export type DialogTypeFilter = "bot" | "channel" | "group" | "person" | "saved";
+
+export type DialogAvailabilityFilter = "available" | "deleted" | "unavailable";
+
+const dialogTypeOptions = [
+  {
+    icon: BookmarkIcon,
+    iconClassName: "text-muted-foreground",
+    label: "Saved",
+    value: "saved",
+  },
+  {
+    icon: UserRoundIcon,
+    iconClassName: "text-sky-600 dark:text-sky-400",
+    label: "Person",
+    value: "person",
+  },
+  {
+    icon: BotIcon,
+    iconClassName: "text-emerald-600 dark:text-emerald-400",
+    label: "Bot",
+    value: "bot",
+  },
+  {
+    icon: MessagesSquareIcon,
+    iconClassName: "text-violet-600 dark:text-violet-400",
+    label: "Group",
+    value: "group",
+  },
+  {
+    icon: MegaphoneIcon,
+    iconClassName: "text-amber-600 dark:text-amber-400",
+    label: "Channel",
+    value: "channel",
+  },
+] as const;
+
+const dialogAvailabilityOptions = [
+  {
+    icon: CheckCircle2Icon,
+    iconClassName: "text-emerald-600 dark:text-emerald-400",
+    label: "Available",
+    value: "available",
+  },
+  {
+    icon: LockKeyholeIcon,
+    iconClassName: "text-destructive",
+    label: "Unavailable",
+    value: "unavailable",
+  },
+  {
+    icon: UserRoundXIcon,
+    iconClassName: "text-destructive",
+    label: "Deleted",
+    value: "deleted",
+  },
+] as const;
 
 interface AllDialogsToolbarProps {
+  availabilityFilters: ReadonlySet<DialogAvailabilityFilter>;
   dialogCount: number;
   isBulkPending: boolean;
   isRowMutationPending: boolean;
+  onClearFilters: () => void;
   onClearSelection: () => void;
+  onSearchChange: (value: string) => void;
   onSetBulkTracking: (trackingEnabled: boolean) => Promise<void>;
+  onToggleAvailabilityFilter: (filter: DialogAvailabilityFilter) => void;
+  onToggleTypeFilter: (filter: DialogTypeFilter) => void;
+  searchValue: string;
   selectedCount: number;
+  typeFilters: ReadonlySet<DialogTypeFilter>;
 }
 
 export function AllDialogsToolbar({
+  availabilityFilters,
   dialogCount,
   isBulkPending,
   isRowMutationPending,
+  onClearFilters,
   onClearSelection,
+  onSearchChange,
   onSetBulkTracking,
+  onToggleAvailabilityFilter,
+  onToggleTypeFilter,
+  searchValue,
   selectedCount,
+  typeFilters,
 }: AllDialogsToolbarProps) {
+  const activeFilterCount = typeFilters.size + availabilityFilters.size;
+
   return (
     <div className="flex min-h-12 flex-col gap-2 border-b bg-muted/20 p-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -34,15 +122,74 @@ export function AllDialogsToolbar({
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Search dialogs"
-            className="pl-8"
+            className="pl-8 focus-visible:ring-0"
+            onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search name or username..."
-            readOnly
+            value={searchValue}
           />
         </div>
-        <Button aria-label="Filter dialogs" size="sm" variant="outline">
-          <ListFilterIcon data-icon="inline-start" />
-          Filters
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button aria-label="Filter dialogs" size="sm" variant="outline" />
+            }
+          >
+            <ListFilterIcon data-icon="inline-start" />
+            Filters
+            {activeFilterCount > 0 ? (
+              <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Type</DropdownMenuLabel>
+              {dialogTypeOptions.map((option) => {
+                const Icon = option.icon;
+
+                return (
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilters.has(option.value)}
+                    key={option.value}
+                    onCheckedChange={() => onToggleTypeFilter(option.value)}
+                  >
+                    <Icon className={option.iconClassName} />
+                    {option.label}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Availability</DropdownMenuLabel>
+              {dialogAvailabilityOptions.map((option) => {
+                const Icon = option.icon;
+
+                return (
+                  <DropdownMenuCheckboxItem
+                    checked={availabilityFilters.has(option.value)}
+                    key={option.value}
+                    onCheckedChange={() =>
+                      onToggleAvailabilityFilter(option.value)
+                    }
+                  >
+                    <Icon className={option.iconClassName} />
+                    {option.label}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+            </DropdownMenuGroup>
+            {activeFilterCount > 0 ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onClearFilters}>
+                  Clear filters
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <span className="whitespace-nowrap px-1 text-muted-foreground text-sm">
           {dialogCount} dialogs
         </span>
