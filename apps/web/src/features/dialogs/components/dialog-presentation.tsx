@@ -14,6 +14,7 @@ import {
   UserRoundIcon,
   UserRoundXIcon,
 } from "lucide-react";
+import { getDialogAvailability, getDialogType } from "../dialog-classification";
 import type { DialogListItem } from "../types";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -28,7 +29,7 @@ export function DialogIdentity({ dialog }: { dialog: DialogListItem }) {
 
   return (
     <div className="flex min-w-56 items-center gap-3">
-      <Avatar size="lg">
+      <Avatar>
         <AvatarFallback>{initial}</AvatarFallback>
       </Avatar>
       <span className="grid gap-1 leading-none">
@@ -51,20 +52,21 @@ export function DialogType({ dialog }: { dialog: DialogListItem }) {
   let Icon = UserRoundIcon;
   let iconClassName = "text-sky-600 dark:text-sky-400";
   let label = "Person";
+  const type = getDialogType(dialog);
 
-  if (dialog.isSelf) {
+  if (type === "saved") {
     Icon = BookmarkIcon;
     iconClassName = "text-muted-foreground";
     label = "Saved";
-  } else if (dialog.isBot) {
+  } else if (type === "bot") {
     Icon = BotIcon;
     iconClassName = "text-emerald-600 dark:text-emerald-400";
     label = "Bot";
-  } else if (dialog.type === "group") {
+  } else if (type === "group") {
     Icon = MessagesSquareIcon;
     iconClassName = "text-violet-600 dark:text-violet-400";
     label = "Group";
-  } else if (dialog.type === "channel") {
+  } else if (type === "channel") {
     Icon = MegaphoneIcon;
     iconClassName = "text-amber-600 dark:text-amber-400";
     label = "Channel";
@@ -100,7 +102,9 @@ export function DialogLocation({ dialog }: { dialog: DialogListItem }) {
 }
 
 export function DialogAvailability({ dialog }: { dialog: DialogListItem }) {
-  if (dialog.isDeleted) {
+  const availability = getDialogAvailability(dialog);
+
+  if (availability === "deleted") {
     return (
       <Badge
         className="bg-destructive/10 text-foreground dark:bg-destructive/15"
@@ -112,7 +116,7 @@ export function DialogAvailability({ dialog }: { dialog: DialogListItem }) {
     );
   }
 
-  if (dialog.availability === "forbidden") {
+  if (availability === "unavailable") {
     return (
       <Badge
         className="bg-destructive/10 text-foreground dark:bg-destructive/15"
@@ -155,7 +159,7 @@ export function DialogSyncStatus({ dialog }: { dialog: DialogListItem }) {
   }
 
   return (
-    <div className="grid gap-1">
+    <div className="flex items-center gap-2">
       <Badge
         className="bg-amber-500/10 text-foreground dark:bg-amber-500/15"
         variant="secondary"

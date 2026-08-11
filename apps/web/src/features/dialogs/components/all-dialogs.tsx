@@ -36,8 +36,7 @@ function DialogsEmptyState({
 }
 
 export function AllDialogs() {
-  const { isAccountLoading, selectedAccount, selectedAccountId } =
-    useSelectedAccount();
+  const { isAccountLoading, selectedAccountId } = useSelectedAccount();
   const dialogs = useQuery(
     api.telegramDialogs.list,
     selectedAccountId ? { accountId: selectedAccountId } : "skip"
@@ -47,13 +46,12 @@ export function AllDialogs() {
     (selectedAccountId !== undefined && dialogs === undefined);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <header>
-        <h1 className="font-semibold text-xl">All dialogs</h1>
-        <p className="mt-1 text-muted-foreground text-sm">
-          {selectedAccount
-            ? `Choose which dialogs to track from ${selectedAccount.displayName}.`
-            : "Choose a Telegram account to see its dialogs."}
+    <div className="flex h-svh max-h-svh min-h-0 flex-col gap-5 overflow-hidden overscroll-none p-5 sm:p-6 lg:p-8">
+      <header className="shrink-0">
+        <h1 className="font-semibold text-2xl tracking-tight">All dialogs</h1>
+        <p className="mt-1.5 max-w-2xl text-muted-foreground text-sm leading-relaxed">
+          Browse your conversations and choose which ones Remnant should
+          preserve.
         </p>
       </header>
 
@@ -71,7 +69,9 @@ export function AllDialogs() {
         />
       ) : null}
       {!isLoading && selectedAccountId && dialogs && dialogs.length > 0 ? (
-        <AllDialogsTable dialogs={dialogs} key={selectedAccountId} />
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <AllDialogsTable dialogs={dialogs} key={selectedAccountId} />
+        </div>
       ) : null}
     </div>
   );

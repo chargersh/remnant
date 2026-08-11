@@ -11,55 +11,58 @@ import {
   TableRow,
 } from "@remnant/ui/components/table";
 import { cn } from "@remnant/ui/lib/utils";
+import type {
+  ColumnFiltersState,
+  RowSelectionState,
+} from "@tanstack/react-table";
 import { useTable } from "@tanstack/react-table";
 import { useMutation } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  type DialogAvailabilityFilter,
+  type DialogTypeFilter,
+  isDialogAvailabilityFilter,
+  isDialogTypeFilter,
+} from "../dialog-classification";
 import type { DialogListItem } from "../types";
 import {
   allDialogsTableFeatures,
   createAllDialogsColumns,
 } from "./all-dialogs-columns";
-import {
-  AllDialogsToolbar,
-  type DialogAvailabilityFilter,
-  type DialogTypeFilter,
-} from "./all-dialogs-toolbar";
+import { AllDialogsToolbar } from "./all-dialogs-toolbar";
 
 export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   const setTracking = useMutation(api.telegramDialogs.setTracking);
   const setTrackingBulk = useMutation(api.telegramDialogs.setTrackingBulk);
-  const [searchValue, setSearchValue] = useState("");
-  const [typeFilters, setTypeFilters] = useState<ReadonlySet<DialogTypeFilter>>(
-    () => new Set()
-  );
-  const [availabilityFilters, setAvailabilityFilters] = useState<
-    ReadonlySet<DialogAvailabilityFilter>
-  >(() => new Set());
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [pendingDialogIds, setPendingDialogIds] = useState<
     ReadonlySet<Id<"telegramDialogs">>
   >(() => new Set());
   const [isBulkPending, setIsBulkPending] = useState(false);
-  const filteredDialogs = useMemo(() => {
-    const query = normalizeSearchValue(searchValue);
 
-    return dialogs.filter((dialog) => {
-      const username = dialog.username
-        ? normalizeSearchValue(dialog.username)
-        : "";
-      const matchesSearch =
-        query.length === 0 ||
-        normalizeSearchValue(dialog.name).includes(query) ||
-        username.includes(query);
-      const matchesType =
-        typeFilters.size === 0 || typeFilters.has(getDialogType(dialog));
-      const matchesAvailability =
-        availabilityFilters.size === 0 ||
-        availabilityFilters.has(getDialogAvailability(dialog));
+  useEffect(() => {
+    const availableDialogIds = new Set<string>(
+      dialogs.map((dialog) => dialog.dialogId)
+    );
 
-      return matchesSearch && matchesType && matchesAvailability;
+    setRowSelection((current) => {
+      const next: RowSelectionState = {};
+      let changed = false;
+
+      for (const [dialogId, selected] of Object.entries(current)) {
+        if (availableDialogIds.has(dialogId)) {
+          next[dialogId] = selected;
+        } else {
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
     });
-  }, [availabilityFilters, dialogs, searchValue, typeFilters]);
+  }, [dialogs]);
 
   const handleSetTracking = useCallback(
     async (dialogId: Id<"telegramDialogs">, trackingEnabled: boolean) => {
@@ -90,12 +93,32 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   );
   const table = useTable({
     columns,
-    data: filteredDialogs,
+    data: dialogs,
     features: allDialogsTableFeatures,
     getRowId: (dialog) => dialog.dialogId,
+    globalFilterFn: "dialogSearch",
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      columnFilters,
+      globalFilter,
+      rowSelection,
+    },
   });
   const selectedCount = table.getSelectedRowModel().rows.length;
   const isRowMutationPending = pendingDialogIds.size > 0;
+  const visibleRows = table.getRowModel().rows;
+  const typeFilters = getColumnFilterValues(
+    columnFilters,
+    "type",
+    isDialogTypeFilter
+  );
+  const availabilityFilters = getColumnFilterValues(
+    columnFilters,
+    "availability",
+    isDialogAvailabilityFilter
+  );
 
   const handleBulkTracking = async (trackingEnabled: boolean) => {
     const dialogIds = table
@@ -126,113 +149,119 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   };
 
   const handleToggleTypeFilter = (filter: DialogTypeFilter) => {
-    setTypeFilters((current) => toggleSetValue(current, filter));
+    setColumnFilters((current) =>
+      toggleColumnFilterValue(current, "type", filter, isDialogTypeFilter)
+    );
   };
 
   const handleToggleAvailabilityFilter = (filter: DialogAvailabilityFilter) => {
-    setAvailabilityFilters((current) => toggleSetValue(current, filter));
+    setColumnFilters((current) =>
+      toggleColumnFilterValue(
+        current,
+        "availability",
+        filter,
+        isDialogAvailabilityFilter
+      )
+    );
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <div className="flex h-full max-h-full flex-col overflow-hidden rounded-xl border bg-card **:data-[slot=table-container]:overflow-visible">
       <AllDialogsToolbar
         availabilityFilters={availabilityFilters}
-        dialogCount={filteredDialogs.length}
+        dialogCount={visibleRows.length}
         isBulkPending={isBulkPending}
         isRowMutationPending={isRowMutationPending}
-        onClearFilters={() => {
-          setTypeFilters(new Set());
-          setAvailabilityFilters(new Set());
-        }}
+        onClearFilters={() => setColumnFilters([])}
         onClearSelection={() => table.resetRowSelection(true)}
-        onSearchChange={setSearchValue}
+        onSearchChange={setGlobalFilter}
         onSetBulkTracking={handleBulkTracking}
         onToggleAvailabilityFilter={handleToggleAvailabilityFilter}
         onToggleTypeFilter={handleToggleTypeFilter}
-        searchValue={searchValue}
+        searchValue={globalFilter}
         selectedCount={selectedCount}
         typeFilters={typeFilters}
       />
-      <Table>
-        <TableHeader className="bg-muted/10">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  className={cn(
-                    "h-12 text-xs",
-                    columnClassName(header.column.id),
-                    header.column.id !== "select" &&
-                      header.column.id !== "tracking" &&
-                      "border-border/60 border-r"
-                  )}
-                  key={header.id}
-                >
-                  {header.isPlaceholder ? null : (
-                    <table.FlexRender header={header} />
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                data-state={row.getIsSelected() ? "selected" : undefined}
-                key={row.id}
-              >
-                {row.getAllCells().map((cell) => (
-                  <TableCell
-                    className={columnClassName(cell.column.id)}
-                    key={cell.id}
+      <div className="scrollbar-gutter-stable shrink-0 overflow-y-auto">
+        <Table className="table-fixed">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    className={cn(
+                      "h-12 text-xs",
+                      columnClassName(header.column.id),
+                      header.column.id !== "select" &&
+                        header.column.id !== "tracking" &&
+                        "border-border/60 border-r"
+                    )}
+                    key={header.id}
                   >
-                    <table.FlexRender cell={cell} />
-                  </TableCell>
+                    {header.isPlaceholder ? null : (
+                      <table.FlexRender header={header} />
+                    )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                className="h-12 text-center text-muted-foreground"
-                colSpan={columns.length}
-              >
-                No dialogs found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+        </Table>
+      </div>
+      <div className="scrollbar-gutter-stable min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain overscroll-x-none">
+        <Table className="table-fixed">
+          <TableBody>
+            {visibleRows.length > 0 ? (
+              visibleRows.map((row) => (
+                <TableRow
+                  className="h-12"
+                  data-state={row.getIsSelected() ? "selected" : undefined}
+                  key={row.id}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell
+                      className={cn("py-2", columnClassName(cell.column.id))}
+                      key={cell.id}
+                    >
+                      <table.FlexRender cell={cell} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  className="h-12 text-center text-muted-foreground"
+                  colSpan={columns.length}
+                >
+                  No dialogs found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
 
-function getDialogType(dialog: DialogListItem): DialogTypeFilter {
-  if (dialog.isSelf) {
-    return "saved";
-  }
+function getColumnFilterValues<Value extends string>(
+  filters: ColumnFiltersState,
+  columnId: string,
+  isValue: (value: unknown) => value is Value
+) {
+  const value = filters.find((filter) => filter.id === columnId)?.value;
 
-  if (dialog.isBot) {
-    return "bot";
-  }
-
-  return dialog.type === "user" ? "person" : dialog.type;
+  return new Set(Array.isArray(value) ? value.filter(isValue) : []);
 }
 
-function getDialogAvailability(
-  dialog: DialogListItem
-): DialogAvailabilityFilter {
-  if (dialog.isDeleted) {
-    return "deleted";
-  }
-
-  return dialog.availability === "forbidden" ? "unavailable" : "available";
-}
-
-function toggleSetValue<Value>(values: ReadonlySet<Value>, value: Value) {
-  const nextValues = new Set(values);
+function toggleColumnFilterValue<Value extends string>(
+  filters: ColumnFiltersState,
+  columnId: string,
+  value: Value,
+  isValue: (candidate: unknown) => candidate is Value
+) {
+  const nextValues = getColumnFilterValues(filters, columnId, isValue);
 
   if (nextValues.has(value)) {
     nextValues.delete(value);
@@ -240,25 +269,20 @@ function toggleSetValue<Value>(values: ReadonlySet<Value>, value: Value) {
     nextValues.add(value);
   }
 
-  return nextValues;
-}
+  const otherFilters = filters.filter((filter) => filter.id !== columnId);
 
-function normalizeSearchValue(value: string) {
-  const trimmedValue = value.trim();
-  const valueWithoutAt = trimmedValue.startsWith("@")
-    ? trimmedValue.slice(1)
-    : trimmedValue;
-
-  return valueWithoutAt.toLocaleLowerCase();
+  return nextValues.size === 0
+    ? otherFilters
+    : [...otherFilters, { id: columnId, value: [...nextValues] }];
 }
 
 function columnClassName(columnId: string) {
   return cn({
-    "hidden md:table-cell": columnId === "type",
-    "hidden lg:table-cell":
+    "hidden md:table-cell md:w-28": columnId === "type",
+    "hidden lg:table-cell lg:w-28":
       columnId === "archived" || columnId === "sourceStatus",
-    "hidden xl:table-cell": columnId === "availability",
-    "w-10": columnId === "select",
+    "hidden xl:table-cell xl:w-36": columnId === "availability",
+    "w-10!": columnId === "select",
     "sticky right-0 z-10 w-32 bg-card text-left lg:static lg:z-auto lg:bg-transparent":
       columnId === "tracking",
   });

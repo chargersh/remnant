@@ -3,11 +3,22 @@ import { Button } from "@remnant/ui/components/button";
 import { Checkbox } from "@remnant/ui/components/checkbox";
 import { Spinner } from "@remnant/ui/components/spinner";
 import {
+  columnFilteringFeature,
+  constructFilterFn,
   createColumnHelper,
+  createFilteredRowModel,
+  filterFn_arrHas,
+  filterFn_includesString,
+  globalFilteringFeature,
   rowSelectionFeature,
   tableFeatures,
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
+import {
+  getDialogAvailability,
+  getDialogSearchText,
+  getDialogType,
+} from "../dialog-classification";
 import type { DialogListItem } from "../types";
 import {
   DialogAvailability,
@@ -17,7 +28,21 @@ import {
   DialogType,
 } from "./dialog-presentation";
 
-export const allDialogsTableFeatures = tableFeatures({ rowSelectionFeature });
+const dialogSearchFilter = constructFilterFn({
+  ...filterFn_includesString,
+  resolveFilterValue: (value) => String(value).trim().toLowerCase(),
+});
+
+export const allDialogsTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  rowSelectionFeature,
+  filteredRowModel: createFilteredRowModel(),
+  filterFns: {
+    arrHas: filterFn_arrHas,
+    dialogSearch: dialogSearchFilter,
+  },
+});
 
 const columnHelper = createColumnHelper<
   typeof allDialogsTableFeatures,
@@ -41,14 +66,20 @@ export function createAllDialogsColumns({
   return columnHelper.columns([
     columnHelper.display({
       id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          aria-label="Select all dialogs"
-          checked={table.getIsAllRowsSelected()}
-          indeterminate={table.getIsSomeRowsSelected()}
-          onCheckedChange={(checked) => table.toggleAllRowsSelected(checked)}
-        />
-      ),
+      header: ({ table }) => {
+        const isAllVisibleRowsSelected = table.getIsAllRowsSelected();
+        const hasVisibleSelectedRows =
+          table.getFilteredSelectedRowModel().rows.length > 0;
+
+        return (
+          <Checkbox
+            aria-label="Select all visible dialogs"
+            checked={isAllVisibleRowsSelected}
+            indeterminate={hasVisibleSelectedRows && !isAllVisibleRowsSelected}
+            onCheckedChange={(checked) => table.toggleAllRowsSelected(checked)}
+          />
+        );
+      },
       cell: ({ row }) => (
         <Checkbox
           aria-label={`Select ${row.original.name}`}
@@ -57,24 +88,32 @@ export function createAllDialogsColumns({
         />
       ),
     }),
-    columnHelper.accessor("name", {
+    columnHelper.accessor(getDialogSearchText, {
+      id: "name",
       header: "Dialog",
       cell: ({ row }) => <DialogIdentity dialog={row.original} />,
     }),
-    columnHelper.accessor("type", {
+    columnHelper.accessor(getDialogType, {
+      id: "type",
+      enableGlobalFilter: false,
+      filterFn: "arrHas",
       header: "Type",
       cell: ({ row }) => <DialogType dialog={row.original} />,
     }),
     columnHelper.accessor("archived", {
+      enableGlobalFilter: false,
       header: "Location",
       cell: ({ row }) => <DialogLocation dialog={row.original} />,
     }),
-    columnHelper.accessor((dialog) => dialog.availability ?? "available", {
+    columnHelper.accessor(getDialogAvailability, {
       id: "availability",
+      enableGlobalFilter: false,
+      filterFn: "arrHas",
       header: "Availability",
       cell: ({ row }) => <DialogAvailability dialog={row.original} />,
     }),
     columnHelper.accessor("sourceStatus", {
+      enableGlobalFilter: false,
       header: "Remnant sync",
       cell: ({ row }) => <DialogSyncStatus dialog={row.original} />,
     }),

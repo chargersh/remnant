@@ -23,10 +23,10 @@ import {
   UserRoundIcon,
   UserRoundXIcon,
 } from "lucide-react";
-
-export type DialogTypeFilter = "bot" | "channel" | "group" | "person" | "saved";
-
-export type DialogAvailabilityFilter = "available" | "deleted" | "unavailable";
+import type {
+  DialogAvailabilityFilter,
+  DialogTypeFilter,
+} from "../dialog-classification";
 
 const dialogTypeOptions = [
   {
@@ -116,7 +116,7 @@ export function AllDialogsToolbar({
   const activeFilterCount = typeFilters.size + availabilityFilters.size;
 
   return (
-    <div className="flex min-h-12 flex-col gap-2 border-b bg-muted/20 p-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-h-12 shrink-0 flex-col gap-2 border-b bg-card p-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="relative w-full sm:max-w-xs">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -131,7 +131,11 @@ export function AllDialogsToolbar({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button aria-label="Filter dialogs" size="sm" variant="outline" />
+              <Button
+                aria-label="Filter dialogs"
+                size="default"
+                variant="outline"
+              />
             }
           >
             <ListFilterIcon data-icon="inline-start" />
@@ -195,14 +199,14 @@ export function AllDialogsToolbar({
         </span>
       </div>
       {selectedCount > 0 ? (
-        <div className="flex min-h-7 shrink-0 items-center justify-end gap-2">
+        <div className="flex min-h-8 shrink-0 items-center justify-end gap-2">
           <span className="px-1 font-medium text-sm">
             {selectedCount} selected
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger
               disabled={isBulkPending || isRowMutationPending}
-              render={<Button size="sm" />}
+              render={<Button size="default" />}
             >
               Change tracking
               <ChevronDownIcon data-icon="inline-end" />
@@ -240,7 +244,7 @@ export function AllDialogsToolbar({
           <Button
             disabled={isBulkPending}
             onClick={onClearSelection}
-            size="sm"
+            size="default"
             variant="ghost"
           >
             Clear
