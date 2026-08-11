@@ -12,6 +12,7 @@
     "@remnant/backend": "workspace:*",
     "@remnant/env": "workspace:*",
     "@remnant/ui": "workspace:*",
+    "@tanstack/react-table": "^9.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "convex": "catalog:",
     "dotenv": "catalog:",
