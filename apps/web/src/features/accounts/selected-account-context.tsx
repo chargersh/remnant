@@ -26,7 +26,8 @@ const SelectedAccountContext =
 
 export function SelectedAccountProvider({ children }: { children: ReactNode }) {
   const accounts = useQuery(api.telegramAccounts.list);
-  const [selectedAccountId, selectAccount] = useState<Id<"telegramAccounts">>();
+  const [preferredAccountId, selectAccount] =
+    useState<Id<"telegramAccounts">>();
 
   useEffect(() => {
     if (accounts === undefined) {
@@ -36,7 +37,7 @@ export function SelectedAccountProvider({ children }: { children: ReactNode }) {
     const firstAccount = accounts[0];
 
     if (!firstAccount) {
-      if (selectedAccountId) {
+      if (preferredAccountId) {
         selectAccount(undefined);
       }
       return;
@@ -44,20 +45,21 @@ export function SelectedAccountProvider({ children }: { children: ReactNode }) {
 
     if (
       !(
-        selectedAccountId &&
-        accounts.some((account) => account.accountId === selectedAccountId)
+        preferredAccountId &&
+        accounts.some((account) => account.accountId === preferredAccountId)
       )
     ) {
       selectAccount(firstAccount.accountId);
     }
-  }, [accounts, selectedAccountId]);
+  }, [accounts, preferredAccountId]);
 
   const selectedAccount = useMemo(
     () =>
-      accounts?.find((account) => account.accountId === selectedAccountId) ??
+      accounts?.find((account) => account.accountId === preferredAccountId) ??
       accounts?.[0],
-    [accounts, selectedAccountId]
+    [accounts, preferredAccountId]
   );
+  const selectedAccountId = selectedAccount?.accountId;
   const value = useMemo(
     () => ({
       accounts,

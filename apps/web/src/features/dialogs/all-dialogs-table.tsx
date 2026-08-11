@@ -21,18 +21,18 @@ import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  allDialogsTableFeatures,
+  createAllDialogsColumns,
+} from "./components/all-dialogs-columns";
+import { AllDialogsTableSkeleton } from "./components/all-dialogs-table-skeleton";
+import { AllDialogsToolbar } from "./components/all-dialogs-toolbar";
+import {
   type DialogAvailabilityFilter,
   type DialogTypeFilter,
   isDialogAvailabilityFilter,
   isDialogTypeFilter,
-} from "../dialog-classification";
-import type { DialogListItem } from "../types";
-import {
-  allDialogsTableFeatures,
-  createAllDialogsColumns,
-} from "./all-dialogs-columns";
-import { AllDialogsTableSkeleton } from "./all-dialogs-table-skeleton";
-import { AllDialogsToolbar } from "./all-dialogs-toolbar";
+} from "./dialog-classification";
+import type { DialogListItem } from "./types";
 
 interface AllDialogsTableProps {
   dialogs: DialogListItem[];

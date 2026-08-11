@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import {
   telegramAvailabilityValidator,
@@ -7,6 +7,8 @@ import {
   telegramPeerKindValidator,
 } from "./validators/telegram";
 import { telegramDialogSourceStatusValidator } from "./validators/telegramDialogs";
+
+const DIALOG_READ_BATCH_SIZE = 500;
 
 const requireDialog = async (
   ctx: MutationCtx,
@@ -170,9 +172,23 @@ export const setTrackingBulk = mutation({
       throw new ConvexError("Telegram dialog IDs must be unique");
     }
 
-    const dialogs = await Promise.all(
-      args.dialogIds.map((dialogId) => requireDialog(ctx, dialogId))
-    );
+    const dialogs: Doc<"telegramDialogs">[] = [];
+
+    for (
+      let batchStart = 0;
+      batchStart < args.dialogIds.length;
+      batchStart += DIALOG_READ_BATCH_SIZE
+    ) {
+      const dialogIds = args.dialogIds.slice(
+        batchStart,
+        batchStart + DIALOG_READ_BATCH_SIZE
+      );
+      const batch = await Promise.all(
+        dialogIds.map((dialogId) => requireDialog(ctx, dialogId))
+      );
+
+      dialogs.push(...batch);
+    }
     const dialogsToUpdate = dialogs.filter(
       (dialog) => dialog.trackingEnabled !== args.trackingEnabled
     );
