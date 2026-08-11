@@ -10,7 +10,7 @@ export type TelegramAccount = NonNullable<
 >[number];
 
 export interface SidebarUser {
-  avatar: string;
+  avatar?: string;
   email: string;
   name: string;
 }

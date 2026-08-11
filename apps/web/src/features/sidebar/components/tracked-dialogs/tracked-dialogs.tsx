@@ -38,35 +38,37 @@ export function TrackedDialogs({
     dialogs.length === 0;
 
   return (
-    <Collapsible className="group/collapsible">
-      <SidebarMenuItem>
-        <CollapsibleTrigger
-          render={<SidebarMenuButton isActive={activeDialogId !== null} />}
-        >
-          <ListChecksIcon />
-          <span>Tracked dialogs</span>
-          <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90" />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          {showNoAccount ? (
-            <TrackedDialogEmptyState message="No account selected" />
-          ) : null}
-          {showNoTrackedDialogs ? (
-            <TrackedDialogEmptyState message="No tracked dialogs" />
-          ) : null}
-          {hasTrackedDialogs ? (
-            <SidebarMenuSub>
-              {dialogs.map((dialog) => (
-                <TrackedDialogItem
-                  dialog={dialog}
-                  isActive={activeDialogId === dialog.dialogId}
-                  key={dialog.dialogId}
-                />
-              ))}
-            </SidebarMenuSub>
-          ) : null}
-        </CollapsibleContent>
-      </SidebarMenuItem>
+    <Collapsible
+      className="group/collapsible"
+      defaultOpen={activeDialogId !== null}
+      render={<SidebarMenuItem />}
+    >
+      <CollapsibleTrigger
+        render={<SidebarMenuButton isActive={activeDialogId !== null} />}
+      >
+        <ListChecksIcon />
+        <span>Tracked dialogs</span>
+        <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {showNoAccount ? (
+          <TrackedDialogEmptyState message="No account selected" />
+        ) : null}
+        {showNoTrackedDialogs ? (
+          <TrackedDialogEmptyState message="No tracked dialogs" />
+        ) : null}
+        {hasTrackedDialogs ? (
+          <SidebarMenuSub>
+            {dialogs.map((dialog) => (
+              <TrackedDialogItem
+                dialog={dialog}
+                isActive={activeDialogId === dialog.dialogId}
+                key={dialog.dialogId}
+              />
+            ))}
+          </SidebarMenuSub>
+        ) : null}
+      </CollapsibleContent>
     </Collapsible>
   );
 }

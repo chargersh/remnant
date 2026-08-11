@@ -9,16 +9,17 @@ import {
   SidebarHeader,
 } from "@remnant/ui/components/sidebar";
 import { useQuery } from "convex/react";
-import { type ComponentProps, useEffect, useState } from "react";
+import {
+  type ComponentProps,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { SidebarNavigation } from "./components/navigation/sidebar-navigation";
 import { UserMenu } from "./components/sidebar-footer/user-menu";
 import { AccountMenu } from "./components/sidebar-header/account-menu";
-
-const user = {
-  name: "shadcn",
-  email: "m@example.com",
-  avatar: "/avatars/shadcn.jpg",
-};
+import { accountHandle } from "./utils";
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const accounts = useQuery(api.telegramAccounts.list);
@@ -26,14 +27,44 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     useState<Id<"telegramAccounts">>();
 
   useEffect(() => {
-    const firstAccount = accounts?.[0];
-
-    if (selectedAccountId || !firstAccount) {
+    if (accounts === undefined) {
       return;
     }
 
-    setSelectedAccountId(firstAccount.accountId);
+    const firstAccount = accounts?.[0];
+
+    if (!firstAccount) {
+      if (selectedAccountId) {
+        setSelectedAccountId(undefined);
+      }
+      return;
+    }
+
+    if (
+      !(
+        selectedAccountId &&
+        accounts.some((account) => account.accountId === selectedAccountId)
+      )
+    ) {
+      setSelectedAccountId(firstAccount.accountId);
+    }
   }, [accounts, selectedAccountId]);
+
+  const selectedAccount = useMemo(
+    () =>
+      accounts?.find((account) => account.accountId === selectedAccountId) ??
+      accounts?.[0],
+    [accounts, selectedAccountId]
+  );
+  const user = selectedAccount
+    ? {
+        email: accountHandle(selectedAccount),
+        name: selectedAccount.displayName,
+      }
+    : {
+        email: "No Telegram account selected",
+        name: accounts === undefined ? "Loading account" : "No account",
+      };
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -45,10 +76,12 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarNavigation
-          accountId={selectedAccountId}
-          isAccountLoading={accounts === undefined}
-        />
+        <Suspense fallback={null}>
+          <SidebarNavigation
+            accountId={selectedAccountId}
+            isAccountLoading={accounts === undefined}
+          />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter>
         <UserMenu user={user} />
