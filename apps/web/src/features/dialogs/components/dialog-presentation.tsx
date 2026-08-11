@@ -5,13 +5,14 @@ import {
   BookmarkIcon,
   BotIcon,
   CheckCircle2Icon,
-  CircleSlash2Icon,
   InboxIcon,
+  LockKeyholeIcon,
   MegaphoneIcon,
   MessagesSquareIcon,
   PinIcon,
   RefreshCwOffIcon,
   UserRoundIcon,
+  UserRoundXIcon,
 } from "lucide-react";
 import type { DialogListItem } from "../types";
 
@@ -105,10 +106,7 @@ export function DialogAvailability({ dialog }: { dialog: DialogListItem }) {
         className="bg-destructive/10 text-foreground dark:bg-destructive/15"
         variant="secondary"
       >
-        <CircleSlash2Icon
-          className="text-destructive"
-          data-icon="inline-start"
-        />
+        <UserRoundXIcon className="text-destructive" data-icon="inline-start" />
         Deleted
       </Badge>
     );
@@ -120,7 +118,7 @@ export function DialogAvailability({ dialog }: { dialog: DialogListItem }) {
         className="bg-destructive/10 text-foreground dark:bg-destructive/15"
         variant="secondary"
       >
-        <CircleSlash2Icon
+        <LockKeyholeIcon
           className="text-destructive"
           data-icon="inline-start"
         />

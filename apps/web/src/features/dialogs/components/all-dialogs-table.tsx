@@ -2,7 +2,6 @@
 
 import { api } from "@remnant/backend/convex/_generated/api";
 import type { Id } from "@remnant/backend/convex/_generated/dataModel";
-import { Button } from "@remnant/ui/components/button";
 import {
   Table,
   TableBody,
@@ -21,6 +20,7 @@ import {
   allDialogsTableFeatures,
   createAllDialogsColumns,
 } from "./all-dialogs-columns";
+import { AllDialogsToolbar } from "./all-dialogs-toolbar";
 
 export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   const setTracking = useMutation(api.telegramDialogs.setTracking);
@@ -95,44 +95,28 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   };
 
   return (
-    <div className="grid gap-3">
-      {selectedCount > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 p-2">
-          <span className="px-1 font-medium text-sm">
-            {selectedCount} selected
-          </span>
-          <Button
-            disabled={isBulkPending || isRowMutationPending}
-            onClick={() => handleBulkTracking(true)}
-            size="sm"
-          >
-            Track selected
-          </Button>
-          <Button
-            disabled={isBulkPending || isRowMutationPending}
-            onClick={() => handleBulkTracking(false)}
-            size="sm"
-            variant="outline"
-          >
-            Stop tracking
-          </Button>
-          <Button
-            disabled={isBulkPending}
-            onClick={() => table.resetRowSelection(true)}
-            size="sm"
-            variant="ghost"
-          >
-            Clear
-          </Button>
-        </div>
-      ) : null}
-      <Table variant="card">
-        <TableHeader>
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <AllDialogsToolbar
+        dialogCount={dialogs.length}
+        isBulkPending={isBulkPending}
+        isRowMutationPending={isRowMutationPending}
+        onClearSelection={() => table.resetRowSelection(true)}
+        onSetBulkTracking={handleBulkTracking}
+        selectedCount={selectedCount}
+      />
+      <Table>
+        <TableHeader className="bg-muted/10">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <TableHead
-                  className={columnClassName(header.column.id)}
+                  className={cn(
+                    "h-12 text-xs",
+                    columnClassName(header.column.id),
+                    header.column.id !== "select" &&
+                      header.column.id !== "tracking" &&
+                      "border-border/60 border-r"
+                  )}
                   key={header.id}
                 >
                   {header.isPlaceholder ? null : (
@@ -172,7 +156,7 @@ function columnClassName(columnId: string) {
       columnId === "archived" || columnId === "sourceStatus",
     "hidden xl:table-cell": columnId === "availability",
     "w-10": columnId === "select",
-    "sticky right-0 z-10 w-32 bg-background text-right":
+    "sticky right-0 z-10 w-32 bg-card text-left lg:static lg:z-auto lg:bg-transparent":
       columnId === "tracking",
   });
 }
