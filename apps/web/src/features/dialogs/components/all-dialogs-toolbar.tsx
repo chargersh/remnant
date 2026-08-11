@@ -86,6 +86,7 @@ interface AllDialogsToolbarProps {
   availabilityFilters: ReadonlySet<DialogAvailabilityFilter>;
   dialogCount: number;
   isBulkPending: boolean;
+  isLoading?: boolean;
   isRowMutationPending: boolean;
   onClearFilters: () => void;
   onClearSelection: () => void;
@@ -102,6 +103,7 @@ export function AllDialogsToolbar({
   availabilityFilters,
   dialogCount,
   isBulkPending,
+  isLoading = false,
   isRowMutationPending,
   onClearFilters,
   onClearSelection,
@@ -194,9 +196,11 @@ export function AllDialogsToolbar({
             ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
-        <span className="whitespace-nowrap px-1 text-muted-foreground text-sm">
-          {dialogCount} dialogs
-        </span>
+        {isLoading ? null : (
+          <span className="whitespace-nowrap px-1 text-muted-foreground text-sm">
+            {dialogCount} dialogs
+          </span>
+        )}
       </div>
       {selectedCount > 0 ? (
         <div className="flex min-h-8 shrink-0 items-center justify-end gap-2">

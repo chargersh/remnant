@@ -31,9 +31,18 @@ import {
   allDialogsTableFeatures,
   createAllDialogsColumns,
 } from "./all-dialogs-columns";
+import { AllDialogsTableSkeleton } from "./all-dialogs-table-skeleton";
 import { AllDialogsToolbar } from "./all-dialogs-toolbar";
 
-export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
+interface AllDialogsTableProps {
+  dialogs: DialogListItem[];
+  isLoading?: boolean;
+}
+
+export function AllDialogsTable({
+  dialogs,
+  isLoading = false,
+}: AllDialogsTableProps) {
   const setTracking = useMutation(api.telegramDialogs.setTracking);
   const setTrackingBulk = useMutation(api.telegramDialogs.setTrackingBulk);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -167,11 +176,15 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
   };
 
   return (
-    <div className="flex h-full max-h-full flex-col overflow-hidden rounded-xl border bg-card **:data-[slot=table-container]:overflow-visible">
+    <div
+      aria-busy={isLoading}
+      className="flex h-full max-h-full flex-col overflow-hidden rounded-xl border bg-card **:data-[slot=table-container]:overflow-visible"
+    >
       <AllDialogsToolbar
         availabilityFilters={availabilityFilters}
         dialogCount={visibleRows.length}
         isBulkPending={isBulkPending}
+        isLoading={isLoading}
         isRowMutationPending={isRowMutationPending}
         onClearFilters={() => setColumnFilters([])}
         onClearSelection={() => table.resetRowSelection(true)}
@@ -212,24 +225,28 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
       <ScrollArea className="custom-scrollbar **:data-[slot=scroll-area-viewport]:overflow-x-hidden! min-h-0 flex-1 **:data-[slot=scroll-area-viewport]:overscroll-y-contain **:data-[slot=scroll-area-viewport]:overscroll-x-none">
         <Table className="table-fixed">
           <TableBody>
-            {visibleRows.length > 0 ? (
-              visibleRows.map((row) => (
-                <TableRow
-                  className="h-12"
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                  key={row.id}
-                >
-                  {row.getAllCells().map((cell) => (
-                    <TableCell
-                      className={cn("py-2", columnClassName(cell.column.id))}
-                      key={cell.id}
-                    >
-                      <table.FlexRender cell={cell} />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
+            {isLoading ? (
+              <AllDialogsTableSkeleton cellClassName={dialogCellClassName} />
+            ) : null}
+            {isLoading
+              ? null
+              : visibleRows.map((row) => (
+                  <TableRow
+                    className="h-12"
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                    key={row.id}
+                  >
+                    {row.getAllCells().map((cell) => (
+                      <TableCell
+                        className={dialogCellClassName(cell.column.id)}
+                        key={cell.id}
+                      >
+                        <table.FlexRender cell={cell} />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+            {!isLoading && visibleRows.length === 0 ? (
               <TableRow>
                 <TableCell
                   className="h-12 text-center text-muted-foreground"
@@ -238,7 +255,7 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
                   No dialogs found.
                 </TableCell>
               </TableRow>
-            )}
+            ) : null}
           </TableBody>
         </Table>
       </ScrollArea>
@@ -287,4 +304,8 @@ function columnClassName(columnId: string) {
     "sticky right-0 z-10 w-32 bg-card text-left lg:static lg:z-auto lg:bg-transparent":
       columnId === "tracking",
   });
+}
+
+function dialogCellClassName(columnId: string) {
+  return cn("h-12 py-0", columnClassName(columnId));
 }

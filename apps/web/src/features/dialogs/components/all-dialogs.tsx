@@ -1,22 +1,9 @@
 "use client";
 
 import { api } from "@remnant/backend/convex/_generated/api";
-import { Skeleton } from "@remnant/ui/components/skeleton";
 import { useQuery } from "convex/react";
 import { useSelectedAccount } from "@/features/accounts/selected-account-context";
 import { AllDialogsTable } from "./all-dialogs-table";
-
-const skeletonRows = ["one", "two", "three", "four", "five"] as const;
-
-function DialogsTableSkeleton() {
-  return (
-    <div className="grid gap-2 rounded-xl border p-3">
-      {skeletonRows.map((row) => (
-        <Skeleton className="h-12 w-full" key={row} />
-      ))}
-    </div>
-  );
-}
 
 function DialogsEmptyState({
   description,
@@ -44,6 +31,10 @@ export function AllDialogs() {
   const isLoading =
     isAccountLoading ||
     (selectedAccountId !== undefined && dialogs === undefined);
+  const hasDialogs =
+    selectedAccountId !== undefined &&
+    dialogs !== undefined &&
+    dialogs.length > 0;
 
   return (
     <div className="flex h-svh max-h-svh min-h-0 flex-col gap-5 overflow-hidden overscroll-none p-5 sm:p-6 lg:p-8">
@@ -55,7 +46,14 @@ export function AllDialogs() {
         </p>
       </header>
 
-      {isLoading ? <DialogsTableSkeleton /> : null}
+      {isLoading || hasDialogs ? (
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <AllDialogsTable
+            dialogs={isLoading ? [] : (dialogs ?? [])}
+            isLoading={isLoading}
+          />
+        </div>
+      ) : null}
       {isLoading || selectedAccountId ? null : (
         <DialogsEmptyState
           description="Connect or select a Telegram account before choosing dialogs to track."
@@ -67,11 +65,6 @@ export function AllDialogs() {
           description="Run a dialog sync to discover people, groups, and channels from this account."
           title="No dialogs found"
         />
-      ) : null}
-      {!isLoading && selectedAccountId && dialogs && dialogs.length > 0 ? (
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <AllDialogsTable dialogs={dialogs} key={selectedAccountId} />
-        </div>
       ) : null}
     </div>
   );
