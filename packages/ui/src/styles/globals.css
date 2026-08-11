@@ -131,6 +131,52 @@
   }
 }
 
+@layer components {
+  .custom-scrollbar,
+  .custom-scrollbar [data-slot="scroll-area-viewport"] {
+    scrollbar-color: color-mix(
+        in oklab,
+        var(--muted-foreground) 30%,
+        transparent
+      )
+      transparent;
+    scrollbar-width: thin;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar,
+  .custom-scrollbar [data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+    width: 0.375rem;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .custom-scrollbar
+    [data-slot="scroll-area-viewport"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .custom-scrollbar [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb,
+  .custom-scrollbar [data-slot="scroll-area-thumb"] {
+    background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+    transition: background-color 150ms ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+  .custom-scrollbar
+    [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb:hover,
+  .custom-scrollbar
+    [data-slot="scroll-area-scrollbar"]:hover
+    [data-slot="scroll-area-thumb"],
+  .custom-scrollbar [data-slot="scroll-area-thumb"]:hover {
+    background: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+
+  .custom-scrollbar
+    [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
+    width: 0.5rem !important;
+  }
+}
+
 @utility ease-snappy {
   transition-timing-function: cubic-bezier(0.2, 0.4, 0.1, 0.95);
   animation-timing-function: cubic-bezier(0.2, 0.4, 0.1, 0.95);

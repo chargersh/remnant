@@ -2,6 +2,7 @@
 
 import { api } from "@remnant/backend/convex/_generated/api";
 import type { Id } from "@remnant/backend/convex/_generated/dataModel";
+import { ScrollArea } from "@remnant/ui/components/scroll-area";
 import {
   Table,
   TableBody,
@@ -182,7 +183,7 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
         selectedCount={selectedCount}
         typeFilters={typeFilters}
       />
-      <div className="scrollbar-gutter-stable shrink-0 overflow-y-auto">
+      <div className="shrink-0">
         <Table className="table-fixed">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -208,7 +209,7 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
           </TableHeader>
         </Table>
       </div>
-      <div className="scrollbar-gutter-stable min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain overscroll-x-none">
+      <ScrollArea className="custom-scrollbar **:data-[slot=scroll-area-viewport]:overflow-x-hidden! min-h-0 flex-1 **:data-[slot=scroll-area-viewport]:overscroll-y-contain **:data-[slot=scroll-area-viewport]:overscroll-x-none">
         <Table className="table-fixed">
           <TableBody>
             {visibleRows.length > 0 ? (
@@ -240,7 +241,7 @@ export function AllDialogsTable({ dialogs }: { dialogs: DialogListItem[] }) {
             )}
           </TableBody>
         </Table>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
