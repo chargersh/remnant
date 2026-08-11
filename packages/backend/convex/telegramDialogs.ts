@@ -1,11 +1,25 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
+import { type MutationCtx, mutation, query } from "./_generated/server";
 import {
   telegramAvailabilityValidator,
   telegramDialogTypeValidator,
   telegramPeerKindValidator,
 } from "./validators/telegram";
 import { telegramDialogSourceStatusValidator } from "./validators/telegramDialogs";
+
+const requireDialog = async (
+  ctx: MutationCtx,
+  dialogId: Id<"telegramDialogs">
+) => {
+  const dialog = await ctx.db.get(dialogId);
+
+  if (!dialog) {
+    throw new ConvexError("Telegram dialog not found");
+  }
+
+  return dialog;
+};
 
 export const list = query({
   args: {
@@ -115,5 +129,60 @@ export const listTracked = query({
         type: dialog.type,
         username: "username" in dialog ? dialog.username : undefined,
       }));
+  },
+});
+
+export const setTracking = mutation({
+  args: {
+    dialogId: v.id("telegramDialogs"),
+    trackingEnabled: v.boolean(),
+  },
+  returns: v.object({
+    dialogId: v.id("telegramDialogs"),
+    trackingEnabled: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const dialog = await requireDialog(ctx, args.dialogId);
+
+    if (dialog.trackingEnabled !== args.trackingEnabled) {
+      await ctx.db.patch(dialog._id, {
+        trackingEnabled: args.trackingEnabled,
+      });
+    }
+
+    return {
+      dialogId: dialog._id,
+      trackingEnabled: args.trackingEnabled,
+    };
+  },
+});
+
+export const setTrackingBulk = mutation({
+  args: {
+    dialogIds: v.array(v.id("telegramDialogs")),
+    trackingEnabled: v.boolean(),
+  },
+  returns: v.object({
+    updatedCount: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    if (new Set(args.dialogIds).size !== args.dialogIds.length) {
+      throw new ConvexError("Telegram dialog IDs must be unique");
+    }
+
+    const dialogs = await Promise.all(
+      args.dialogIds.map((dialogId) => requireDialog(ctx, dialogId))
+    );
+    const dialogsToUpdate = dialogs.filter(
+      (dialog) => dialog.trackingEnabled !== args.trackingEnabled
+    );
+
+    for (const dialog of dialogsToUpdate) {
+      await ctx.db.patch(dialog._id, {
+        trackingEnabled: args.trackingEnabled,
+      });
+    }
+
+    return { updatedCount: dialogsToUpdate.length };
   },
 });
