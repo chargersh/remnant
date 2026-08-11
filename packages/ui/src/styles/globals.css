@@ -130,3 +130,8 @@
     @apply font-sans;
   }
 }
+
+@utility ease-snappy {
+  transition-timing-function: cubic-bezier(0.2, 0.4, 0.1, 0.95);
+  animation-timing-function: cubic-bezier(0.2, 0.4, 0.1, 0.95);
+}

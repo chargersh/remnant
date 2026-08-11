@@ -71,7 +71,6 @@ export const telegramDialogSnapshotValidator = v.union(
 export const telegramDialogBaseValidator = v.object({
   accountId: v.id("telegramAccounts"),
   archived: v.boolean(),
-  archivingEnabled: v.boolean(),
   dialogId: telegramDialogIdValidator,
   firstSeenAt: v.number(),
   folderId: v.optional(v.number()),
@@ -83,6 +82,7 @@ export const telegramDialogBaseValidator = v.object({
   peerId: telegramIdValidator,
   pinned: v.boolean(),
   sourceStatus: telegramDialogSourceStatusValidator,
+  trackingEnabled: v.boolean(),
 });
 
 export const telegramChannelDialogBaseValidator = v.object({
