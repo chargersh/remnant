@@ -11,15 +11,17 @@
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "rtl": false,
+  "menuColor": "default",
+  "menuAccent": "subtle",
   "aliases": {
     "components": "@remnant/ui/components",
     "utils": "@remnant/ui/lib/utils",
-    "hooks": "@remnant/ui/hooks",
+    "ui": "@remnant/ui/components",
     "lib": "@remnant/ui/lib",
-    "ui": "@remnant/ui/components"
+    "hooks": "@remnant/ui/hooks"
   },
-  "menuColor": "default",
-  "menuAccent": "subtle",
-  "registries": {},
-  "rtl": false
+  "registries": {
+    "@coss": "https://coss.com/ui/r/{name}.json"
+  }
 }

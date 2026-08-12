@@ -12,7 +12,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       <ConvexClientProvider>
         <TooltipProvider>{children}</TooltipProvider>
       </ConvexClientProvider>
-      <Toaster richColors />
+      <Toaster />
     </ThemeProvider>
   );
 }

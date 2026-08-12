@@ -1,61 +1,26 @@
 "use client";
 
-import { api } from "@remnant/backend/convex/_generated/api";
-import type { Id } from "@remnant/backend/convex/_generated/dataModel";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
 } from "@remnant/ui/components/sidebar";
-import { useQuery } from "convex/react";
-import {
-  type ComponentProps,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type ComponentProps, Suspense } from "react";
+import { useSelectedAccount } from "@/features/accounts/selected-account-context";
 import { SidebarNavigation } from "./components/navigation/sidebar-navigation";
 import { UserMenu } from "./components/sidebar-footer/user-menu";
 import { AccountMenu } from "./components/sidebar-header/account-menu";
 import { accountHandle } from "./utils";
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
-  const accounts = useQuery(api.telegramAccounts.list);
-  const [selectedAccountId, setSelectedAccountId] =
-    useState<Id<"telegramAccounts">>();
-
-  useEffect(() => {
-    if (accounts === undefined) {
-      return;
-    }
-
-    const firstAccount = accounts?.[0];
-
-    if (!firstAccount) {
-      if (selectedAccountId) {
-        setSelectedAccountId(undefined);
-      }
-      return;
-    }
-
-    if (
-      !(
-        selectedAccountId &&
-        accounts.some((account) => account.accountId === selectedAccountId)
-      )
-    ) {
-      setSelectedAccountId(firstAccount.accountId);
-    }
-  }, [accounts, selectedAccountId]);
-
-  const selectedAccount = useMemo(
-    () =>
-      accounts?.find((account) => account.accountId === selectedAccountId) ??
-      accounts?.[0],
-    [accounts, selectedAccountId]
-  );
+  const {
+    accounts,
+    isAccountLoading,
+    selectAccount,
+    selectedAccount,
+    selectedAccountId,
+  } = useSelectedAccount();
   const user = selectedAccount
     ? {
         email: accountHandle(selectedAccount),
@@ -71,7 +36,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <AccountMenu
           accounts={accounts}
-          onSelectedAccountIdChange={setSelectedAccountId}
+          onSelectedAccountIdChange={selectAccount}
           selectedAccountId={selectedAccountId}
         />
       </SidebarHeader>
@@ -79,7 +44,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         <Suspense fallback={null}>
           <SidebarNavigation
             accountId={selectedAccountId}
-            isAccountLoading={accounts === undefined}
+            isAccountLoading={isAccountLoading}
           />
         </Suspense>
       </SidebarContent>
