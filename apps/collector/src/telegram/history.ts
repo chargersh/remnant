@@ -3,6 +3,11 @@ import { Context, Data, Effect, Layer } from "effect";
 import { Api } from "telegram";
 import type { EntityLike } from "telegram/define";
 import { TelegramClient } from "./client";
+import {
+  classifyTelegramError,
+  type TelegramFailure,
+  type TelegramSafePeerContext,
+} from "./error-classifier";
 
 export const TELEGRAM_HISTORY_PAGE_MAX_SIZE = 100;
 
@@ -13,6 +18,8 @@ export interface TelegramHistoryPageRequest {
   readonly offsetDate?: number;
   readonly offsetId?: number;
   readonly peer: EntityLike;
+  /** Safe peer identity used only for diagnostics; never pass an access hash. */
+  readonly peerContext?: TelegramSafePeerContext;
 }
 
 export interface TelegramHistoryPage {
@@ -35,7 +42,7 @@ export class TelegramHistoryRequestError extends Data.TaggedError(
 export class TelegramHistoryFetchError extends Data.TaggedError(
   "TelegramHistoryFetchError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 export type TelegramHistoryError =
@@ -123,8 +130,19 @@ export class TelegramHistory extends Context.Service<
                 peer: request.peer,
               })
             ),
-          catch: (cause) => new TelegramHistoryFetchError({ cause }),
-        });
+          catch: (cause) =>
+            classifyTelegramError(cause, {
+              operation: "historyFetch",
+              ...(request.peerContext ? { peer: request.peerContext } : {}),
+              requestConstructor: "messages.GetHistory",
+            }),
+        }).pipe(
+          Effect.catch((failure) =>
+            failure.summary.category === "cancelled"
+              ? Effect.interrupt
+              : new TelegramHistoryFetchError({ failure })
+          )
+        );
 
         return yield* decodeTelegramHistoryPage(result);
       });

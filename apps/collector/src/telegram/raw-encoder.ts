@@ -1,5 +1,5 @@
 import bigInt from "big-integer";
-import { Data, Effect } from "effect";
+import { Data, Effect, Predicate } from "effect";
 
 const DEFAULT_MAX_DEPTH = 64;
 const DEFAULT_MAX_NODES = 100_000;
@@ -50,13 +50,10 @@ interface TlObject {
   readonly originalArgs: Record<string, unknown>;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
 const isTlObject = (value: unknown): value is TlObject =>
-  isRecord(value) &&
+  Predicate.isObject(value) &&
   typeof value.className === "string" &&
-  isRecord(value.originalArgs);
+  Predicate.isObject(value.originalArgs);
 
 const bytesToBase64 = (value: Uint8Array) =>
   Buffer.from(value.buffer, value.byteOffset, value.byteLength).toString(

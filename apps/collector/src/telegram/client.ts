@@ -1,6 +1,10 @@
 import { Context, Data, Effect, Layer } from "effect";
 import { TelegramClient as GramJsTelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
+import {
+  classifyTelegramError,
+  type TelegramFailure,
+} from "./error-classifier";
 
 type TelegramClientParams = ConstructorParameters<
   typeof GramJsTelegramClient
@@ -13,28 +17,41 @@ export interface TelegramClientConfig {
   readonly session: string | StringSession;
 }
 
+/**
+ * GramJS owns a small number of immediate retries. Durable Effect workers own
+ * scheduling after a classified failure escapes. In particular, GramJS must
+ * not occupy a worker by sleeping through a Telegram flood wait.
+ */
+export const TELEGRAM_CLIENT_RETRY_DEFAULTS = {
+  connectionRetries: 5,
+  downloadRetries: 3,
+  floodSleepThreshold: 0,
+  reconnectRetries: 5,
+  requestRetries: 3,
+} as const satisfies TelegramClientParams;
+
 export class TelegramClientCreationError extends Data.TaggedError(
   "TelegramClientCreationError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 export class TelegramConnectionError extends Data.TaggedError(
   "TelegramConnectionError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 class TelegramDisconnectionError extends Data.TaggedError(
   "TelegramDisconnectionError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 export class TelegramAuthorizationCheckError extends Data.TaggedError(
   "TelegramAuthorizationCheckError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 export class TelegramSessionUnauthorizedError extends Data.TaggedError(
@@ -61,19 +78,32 @@ const createClient = (config: TelegramClientConfig) =>
           : config.session,
         config.apiId,
         config.apiHash,
-        config.clientParams ?? {}
+        {
+          ...TELEGRAM_CLIENT_RETRY_DEFAULTS,
+          ...config.clientParams,
+        }
       ),
-    catch: (cause) => new TelegramClientCreationError({ cause }),
+    catch: (cause) =>
+      new TelegramClientCreationError({
+        failure: classifyTelegramError(cause, {
+          operation: "clientCreation",
+        }),
+      }),
   });
 
 const disconnectClient = (client: GramJsTelegramClient) =>
   Effect.tryPromise({
     try: () => client.disconnect(),
-    catch: (cause) => new TelegramDisconnectionError({ cause }),
+    catch: (cause) =>
+      new TelegramDisconnectionError({
+        failure: classifyTelegramError(cause, {
+          operation: "clientDisconnect",
+        }),
+      }),
   }).pipe(
     Effect.catch((error) =>
       Effect.logWarning("Failed to disconnect the Telegram client cleanly", {
-        cause: error.cause,
+        error: error.failure.summary,
       })
     )
   );
@@ -91,18 +121,31 @@ export const makeTelegramClient = Effect.fn("TelegramClient.make")(function* (
 
   yield* Effect.tryPromise({
     try: () => client.connect(),
-    catch: (cause) => new TelegramConnectionError({ cause }),
+    catch: (cause) =>
+      new TelegramConnectionError({
+        failure: classifyTelegramError(cause, {
+          operation: "clientConnect",
+        }),
+      }),
   });
 
   if (!client.connected) {
     return yield* new TelegramConnectionError({
-      cause: "GramJS did not establish a Telegram connection.",
+      failure: classifyTelegramError(new Error("Not connected"), {
+        operation: "clientConnect",
+      }),
     });
   }
 
   const isAuthorized = yield* Effect.tryPromise({
     try: () => client.checkAuthorization(),
-    catch: (cause) => new TelegramAuthorizationCheckError({ cause }),
+    catch: (cause) =>
+      new TelegramAuthorizationCheckError({
+        failure: classifyTelegramError(cause, {
+          operation: "authorizationCheck",
+          requestConstructor: "updates.GetState",
+        }),
+      }),
   });
 
   if (!isAuthorized) {

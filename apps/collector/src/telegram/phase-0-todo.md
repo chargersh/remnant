@@ -72,15 +72,15 @@ used by history, dialog, update, lookup, and download operations.
 
 ### Proposed typed error categories
 
-- [ ] Add `telegram/error-classifier.ts` with an operation-independent
+- [x] Add `telegram/error-classifier.ts` with an operation-independent
       `classifyTelegramError(cause, context)` function.
-- [ ] Include safe context: operation name, peer kind/ID when allowed, request
+- [x] Include safe context: operation name, peer kind/ID when allowed, request
       constructor, attempt number, and observation time. Never include message
       text, session strings, access hashes, file references, filenames,
       credentials, or complete request objects.
-- [ ] Preserve the original `cause` for internal Effect diagnostics, but expose
-      and log only a safe structured summary.
-- [ ] Classify in specific-to-general order so recoverable exact errors are not
+- [x] Preserve the original `cause` in Effect `Redacted` for trusted internal
+      diagnostics, but expose and log only a safe structured summary.
+- [x] Classify in specific-to-general order so recoverable exact errors are not
       swallowed by broad RPC classes.
 
 | Category | Detection and metadata | Policy |
@@ -101,22 +101,37 @@ used by history, dialog, update, lookup, and download operations.
 
 ### Error-classification tests and policy decisions
 
-- [ ] Unit-test every exported GramJS error class that can be constructed
+- [x] Unit-test every exported GramJS error class that can be constructed
       without a live Telegram request.
-- [ ] Test exact-token precedence over broad classes, especially expired file
+- [x] Test exact-token precedence over broad classes, especially expired file
       references and authorization loss.
-- [ ] Test redaction: safe summaries must not contain session values, access
+- [x] Test redaction: safe summaries must not contain session values, access
       hashes, file references, message content, filenames, credentials, or
       signed URLs.
-- [ ] Add operation-specific wrappers such as history fetch, peer resolution,
-      message lookup, and file download without duplicating classification.
-- [ ] Decide explicit GramJS values for `requestRetries`,
+- [x] Add operation-specific wrappers without duplicating classification. The
+      current history, dialog, account-lookup, and client-lifecycle operations
+      use the shared classifier; future peer, update, and download operations
+      must use the same boundary.
+- [x] Decide explicit GramJS values for `requestRetries`,
       `connectionRetries`, `reconnectRetries`, `downloadRetries`, and
       `floodSleepThreshold`; do not silently depend on defaults.
-- [ ] Define one retry owner for each failure. Document when GramJS retries and
+- [x] Define one retry owner for each failure. Document when GramJS retries and
       when Effect retries so the two layers do not multiply attempts.
 - [ ] Add structured logging/metrics by safe error category, Telegram RPC code,
       retry delay, and operation.
+
+Implemented retry ownership for the current collector foundation:
+
+- GramJS owns up to 3 immediate request attempts and 3 download attempts.
+- Initial connection and automatic reconnection are each bounded at 5 attempts.
+- `floodSleepThreshold` is 0, so GramJS does not hold collector capacity while
+  waiting. Flood waits escape with their required delay for a future durable
+  Effect worker to schedule.
+- Current Effect operation wrappers classify escaped failures but do not add a
+  second generic retry loop. Future durable workers must retry only categories
+  whose policy explicitly allows it.
+- Cancellation remains Effect interruption and is not wrapped or retried as a
+  Telegram operation failure.
 
 ## Remaining Telegram fixture and normalization work
 
@@ -187,7 +202,7 @@ the Telegram collector code is approved.
 
 - [ ] Sanitized Telegram fixtures normalize deterministically.
 - [ ] Unknown Telegram constructors remain recoverable and observable.
-- [ ] Telegram failures are classified into safe, actionable typed errors.
+- [x] Telegram failures are classified into safe, actionable typed errors.
 - [ ] Retry ownership between GramJS and Effect is explicit and tested.
 - [ ] Ephemeral-media behavior is proven safe before automatic preservation.
 - [ ] The selected R2 route works from the collector deployment environment.

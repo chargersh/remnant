@@ -2,6 +2,10 @@ import { Data, Effect, Option } from "effect";
 import { Api } from "telegram";
 import type { Dialog } from "telegram/tl/custom/dialog";
 import { TelegramClient } from "./client";
+import {
+  classifyTelegramError,
+  type TelegramFailure,
+} from "./error-classifier";
 
 interface TelegramDialogBase {
   readonly archived: boolean;
@@ -68,7 +72,7 @@ export interface GetTelegramDialogsOptions {
 export class TelegramDialogsFetchError extends Data.TaggedError(
   "TelegramDialogsFetchError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 const normalizeName = (value: string | undefined, fallback: string) => {
@@ -236,8 +240,18 @@ export const getTelegramDialogs = Effect.fn("TelegramDialogs.get")(function* (
       client.getDialogs({
         limit: options.limit,
       }),
-    catch: (cause) => new TelegramDialogsFetchError({ cause }),
-  });
+    catch: (cause) =>
+      classifyTelegramError(cause, {
+        operation: "dialogList",
+        requestConstructor: "messages.GetDialogs",
+      }),
+  }).pipe(
+    Effect.catch((failure) =>
+      failure.summary.category === "cancelled"
+        ? Effect.interrupt
+        : new TelegramDialogsFetchError({ failure })
+    )
+  );
   const currentDialogs = dialogs.filter(
     (dialog) => !isMigratedLegacyChat(dialog)
   );

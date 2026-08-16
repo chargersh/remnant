@@ -6,6 +6,10 @@ import { Data, Effect, Schedule } from "effect";
 import { TelegramClient } from "../telegram/client";
 import type { TelegramDialog } from "../telegram/dialogs";
 import { getTelegramDialogs } from "../telegram/dialogs";
+import {
+  classifyTelegramError,
+  type TelegramFailure,
+} from "../telegram/error-classifier";
 
 const dialogBatchSize = 100;
 const convex = new ConvexHttpClient(env.CONVEX_URL);
@@ -26,7 +30,7 @@ export class ConvexDialogSyncError extends Data.TaggedError(
 export class TelegramAccountLookupError extends Data.TaggedError(
   "TelegramAccountLookupError"
 )<{
-  readonly cause: unknown;
+  readonly failure: TelegramFailure;
 }> {}
 
 const isRetryableCause = (cause: unknown) => {
@@ -125,8 +129,18 @@ export const collectAndSyncTelegramDialogs = Effect.fn(
   const client = yield* TelegramClient;
   const account = yield* Effect.tryPromise({
     try: () => client.getMe(),
-    catch: (cause) => new TelegramAccountLookupError({ cause }),
-  });
+    catch: (cause) =>
+      classifyTelegramError(cause, {
+        operation: "selfLookup",
+        requestConstructor: "users.GetUsers",
+      }),
+  }).pipe(
+    Effect.catch((failure) =>
+      failure.summary.category === "cancelled"
+        ? Effect.interrupt
+        : new TelegramAccountLookupError({ failure })
+    )
+  );
   const displayName = [account.firstName, account.lastName]
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
