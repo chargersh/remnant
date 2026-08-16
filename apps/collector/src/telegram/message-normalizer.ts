@@ -6,6 +6,7 @@ import type {
   TelegramForward,
   TelegramMessage,
   TelegramMessageEnvelope,
+  TelegramMessageFileDiscovery,
   TelegramReply,
 } from "./message-contracts";
 import { normalizeTelegramPeer } from "./peer-normalizer";
@@ -21,33 +22,36 @@ export interface NormalizeTelegramMessageOptions {
 }
 
 const optionalPeer = (peer: Api.TypePeer | undefined) =>
-  peer === undefined ? Effect.succeed(undefined) : normalizeTelegramPeer(peer);
+  peer === undefined ? Effect.undefined : normalizeTelegramPeer(peer);
 
 const normalizeReply = Effect.fn("TelegramReply.normalize")(function* (
   reply: Api.MessageReplyHeader | undefined
 ) {
   if (reply === undefined) {
-    return;
+    return { warnings: [] } as const;
   }
 
   const replyToPeer = yield* optionalPeer(reply.replyToPeerId);
   const quote = normalizeTelegramEntities(reply.quoteEntities);
 
   return {
-    forumTopic: reply.forumTopic === true,
-    ...(quote.entities.length === 0 ? {} : { quoteEntities: quote.entities }),
-    ...(reply.quoteOffset === undefined
-      ? {}
-      : { quoteOffset: reply.quoteOffset }),
-    ...(reply.quoteText === undefined ? {} : { quoteText: reply.quoteText }),
-    ...(reply.replyToMsgId === undefined
-      ? {}
-      : { replyToMessageId: reply.replyToMsgId }),
-    ...(replyToPeer === undefined ? {} : { replyToPeer }),
-    ...(reply.replyToTopId === undefined
-      ? {}
-      : { replyToTopId: reply.replyToTopId }),
-  } satisfies TelegramReply;
+    reply: {
+      forumTopic: reply.forumTopic === true,
+      ...(quote.entities.length === 0 ? {} : { quoteEntities: quote.entities }),
+      ...(reply.quoteOffset === undefined
+        ? {}
+        : { quoteOffset: reply.quoteOffset }),
+      ...(reply.quoteText === undefined ? {} : { quoteText: reply.quoteText }),
+      ...(reply.replyToMsgId === undefined
+        ? {}
+        : { replyToMessageId: reply.replyToMsgId }),
+      ...(replyToPeer === undefined ? {} : { replyToPeer }),
+      ...(reply.replyToTopId === undefined
+        ? {}
+        : { replyToTopId: reply.replyToTopId }),
+    } satisfies TelegramReply,
+    warnings: quote.warnings,
+  } as const;
 });
 
 const normalizeForward = Effect.fn("TelegramForward.normalize")(function* (
@@ -84,10 +88,8 @@ export const normalizeTelegramMessageContent = Effect.fn(
   source: Api.TypeMessage,
   options: NormalizeTelegramMessageOptions
 ) {
-  const peer = yield* optionalPeer(source.peerId);
   const base = {
     firstObservedAt: options.observedAt,
-    ...(peer === undefined ? {} : { peer }),
     ...(options.rawSourceBatchId === undefined
       ? {}
       : { rawSourceBatchId: options.rawSourceBatchId }),
@@ -95,16 +97,21 @@ export const normalizeTelegramMessageContent = Effect.fn(
   };
 
   if (source instanceof Api.MessageEmpty) {
+    const peer = yield* optionalPeer(source.peerId);
+
     return {
       discoveredFiles: [],
       message: {
         ...base,
         kind: "empty",
+        ...(peer === undefined ? {} : { peer }),
       },
       warnings: [],
     } as const;
   }
 
+  const peer = yield* normalizeTelegramPeer(source.peerId);
+  const messageBase = { ...base, peer };
   const sender = yield* optionalPeer(source.fromId);
 
   if (source instanceof Api.MessageService) {
@@ -113,7 +120,7 @@ export const normalizeTelegramMessageContent = Effect.fn(
     return {
       discoveredFiles: [],
       message: {
-        ...base,
+        ...messageBase,
         action: action.action,
         kind: "service",
         ...(sender === undefined ? {} : { sender }),
@@ -127,11 +134,23 @@ export const normalizeTelegramMessageContent = Effect.fn(
   const media = normalizeTelegramMedia(source.media);
   const reply = yield* normalizeReply(source.replyTo);
   const forward = yield* normalizeForward(source.fwdFrom);
+  const discoveredFiles = media.files.map(
+    ({ file, mediaRole }) =>
+      ({
+        file,
+        source: {
+          mediaRole,
+          peer,
+          telegramMessageId: source.id,
+          type: "messageMedia",
+        },
+      }) satisfies TelegramMessageFileDiscovery
+  );
 
   return {
-    discoveredFiles: media.files,
+    discoveredFiles,
     message: {
-      ...base,
+      ...messageBase,
       kind: "message",
       currentState: {
         ...(source.forwards === undefined ? {} : { forwards: source.forwards }),
@@ -150,12 +169,12 @@ export const normalizeTelegramMessageContent = Effect.fn(
         ? {}
         : { groupedId: source.groupedId.toString() }),
       ...(media.media === undefined ? {} : { media: media.media }),
-      ...(reply === undefined ? {} : { reply }),
+      ...(reply.reply === undefined ? {} : { reply: reply.reply }),
       ...(sender === undefined ? {} : { sender }),
       sentAt: source.date * 1000,
       text: source.message,
     },
-    warnings: [...entities.warnings, ...media.warnings],
+    warnings: [...entities.warnings, ...media.warnings, ...reply.warnings],
   } as const;
 });
 

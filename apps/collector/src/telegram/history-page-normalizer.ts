@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import type { TelegramHistoryPage } from "./history";
 import type {
-  TelegramFileCandidate,
   TelegramMessageEnvelope,
+  TelegramMessageFileDiscovery,
   TelegramNormalizationWarning,
 } from "./message-contracts";
 import {
@@ -18,7 +18,7 @@ import {
 const NORMALIZATION_CONCURRENCY = 4;
 
 export interface TelegramHistoryPageEnvelope {
-  readonly discoveredFiles: readonly TelegramFileCandidate[];
+  readonly discoveredFiles: readonly TelegramMessageFileDiscovery[];
   readonly estimatedMessageCount: number;
   readonly messageCountIsInexact: boolean;
   readonly messages: readonly TelegramMessageEnvelope[];

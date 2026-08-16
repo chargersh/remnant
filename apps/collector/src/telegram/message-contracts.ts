@@ -94,17 +94,36 @@ export interface TelegramDocumentAttributes {
   };
 }
 
-export interface TelegramFileCandidate {
+interface TelegramFileCandidateBase {
   readonly accessHash: string;
   readonly dcId: number;
   readonly expectedSize?: string;
   readonly fileReferenceBase64: string;
-  readonly mediaRole: "primary" | "videoCover";
   readonly mimeType?: string;
   readonly originalFileName?: string;
   readonly presentation?: TelegramDocumentPresentation;
   readonly telegramFileId: string;
-  readonly telegramObjectKind: "document" | "photo";
+}
+
+export type TelegramFileCandidate = TelegramFileCandidateBase &
+  (
+    | {
+        readonly telegramObjectKind: "document";
+      }
+    | {
+        readonly telegramObjectKind: "photo";
+        readonly thumbSize: string;
+      }
+  );
+
+export interface TelegramMessageFileDiscovery {
+  readonly file: TelegramFileCandidate;
+  readonly source: {
+    readonly mediaRole: "primary" | "videoCover";
+    readonly peer: TelegramPeer;
+    readonly telegramMessageId: number;
+    readonly type: "messageMedia";
+  };
 }
 
 export interface TelegramPhotoMedia {
@@ -307,7 +326,7 @@ export interface TelegramNormalizationWarning {
 }
 
 export interface TelegramMessageEnvelope {
-  readonly discoveredFiles: readonly TelegramFileCandidate[];
+  readonly discoveredFiles: readonly TelegramMessageFileDiscovery[];
   readonly message: TelegramMessage;
   readonly semanticHash: string;
   readonly semanticHashVersion: 1;

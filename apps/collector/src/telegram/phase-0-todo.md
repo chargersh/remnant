@@ -25,17 +25,22 @@ intentionally not connected to the message collector yet.
       counters and refreshable file references.
 - [x] Keep unsupported nested Telegram constructors recoverable through
       warnings plus raw preservation.
+- [x] Propagate unsupported entity warnings from message text and reply quotes.
+- [x] Cover raw encoding error paths, resource limits, non-finite values,
+      negative zero, and repeated non-circular references.
 - [x] Cover the current foundation with unit tests.
 
 ## Remaining file-candidate contract work
 
-- [ ] Make photo file candidates self-contained by selecting and preserving the
+- [x] Make photo file candidates self-contained by selecting and preserving the
       Telegram photo-size `type` required as `InputPhotoFileLocation.thumbSize`.
-- [ ] Preserve the parent peer kind/ID and message ID with each queued file so an
-      expired or invalid file reference can be refreshed by refetching its source
-      message.
-- [ ] Test reconstructing GramJS document and photo download locations solely
-      from the persisted file-job contract.
+- [x] Preserve the parent peer kind/ID and message ID with each discovered file
+      so a future queued transfer can refresh an expired or invalid file reference
+      by refetching its source message.
+- [x] Keep reusable file metadata separate from message-specific source and media
+      role information.
+- [x] Test reconstructing GramJS document and photo download locations solely
+      from the serializable file-candidate contract.
 
 ## Next: classify Telegram failures before adding retries
 

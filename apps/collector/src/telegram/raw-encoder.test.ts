@@ -44,8 +44,73 @@ describe("encodeTelegramRawValue", () => {
     const source: { self?: unknown } = {};
     source.self = source;
 
-    const exit = await Effect.runPromiseExit(encodeTelegramRawValue(source));
+    const error = await Effect.runPromise(
+      Effect.flip(encodeTelegramRawValue(source))
+    );
 
-    expect(exit._tag).toBe("Failure");
+    expect(error).toMatchObject({
+      _tag: "TelegramRawEncodingError",
+      path: "$.self",
+      reason: "Circular reference detected",
+    });
+  });
+
+  test("reports depth and node limit failures at their exact paths", async () => {
+    const depthError = await Effect.runPromise(
+      Effect.flip(encodeTelegramRawValue({ nested: {} }, { maxDepth: 0 }))
+    );
+    const nodeError = await Effect.runPromise(
+      Effect.flip(encodeTelegramRawValue({ value: true }, { maxNodes: 1 }))
+    );
+
+    expect(depthError).toMatchObject({
+      _tag: "TelegramRawEncodingError",
+      path: "$.nested",
+      reason: "Value exceeds the 0 level depth limit",
+    });
+    expect(nodeError).toMatchObject({
+      _tag: "TelegramRawEncodingError",
+      path: "$.value",
+      reason: "Value exceeds the 1 node limit",
+    });
+  });
+
+  test("rejects non-finite numbers and unsupported JavaScript values", async () => {
+    const nonFiniteError = await Effect.runPromise(
+      Effect.flip(encodeTelegramRawValue({ value: Number.NaN }))
+    );
+    const unsupportedError = await Effect.runPromise(
+      Effect.flip(encodeTelegramRawValue({ value: Symbol("unsupported") }))
+    );
+
+    expect(nonFiniteError).toMatchObject({
+      path: "$.value",
+      reason: "Non-finite numbers are not supported",
+    });
+    expect(unsupportedError).toMatchObject({
+      path: "$.value",
+      reason: "Unsupported JavaScript value: symbol",
+    });
+  });
+
+  test("normalizes negative zero and permits repeated non-circular objects", async () => {
+    const shared = { value: -0 };
+    const encoded = await Effect.runPromise(
+      encodeTelegramRawValue({ first: shared, second: shared })
+    );
+
+    expect(encoded).toEqual({
+      $type: "object",
+      fields: {
+        first: {
+          $type: "object",
+          fields: { value: 0 },
+        },
+        second: {
+          $type: "object",
+          fields: { value: 0 },
+        },
+      },
+    });
   });
 });

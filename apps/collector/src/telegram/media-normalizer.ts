@@ -15,6 +15,11 @@ import type {
 
 const VIEW_ONCE_TTL_SECONDS = 0x7f_ff_ff_ff;
 
+interface TelegramMediaFileCandidate {
+  readonly file: TelegramFileCandidate;
+  readonly mediaRole: "primary" | "videoCover";
+}
+
 const normalizeEphemeral = (
   ttlSeconds: number | undefined
 ): TelegramEphemeralMedia | undefined => {
@@ -93,8 +98,7 @@ const largestKnownPhotoSize = (sizes: readonly TelegramPhotoSize[]) => {
 
 const photoFileCandidate = (
   photo: Api.Photo,
-  sizes: readonly TelegramPhotoSize[],
-  mediaRole: TelegramFileCandidate["mediaRole"] = "primary"
+  sizes: readonly TelegramPhotoSize[]
 ): TelegramFileCandidate => {
   const expectedSize = largestKnownPhotoSize(sizes);
 
@@ -105,18 +109,18 @@ const photoFileCandidate = (
       ? {}
       : { expectedSize: expectedSize.toString() }),
     fileReferenceBase64: photo.fileReference.toString("base64"),
-    mediaRole,
     mimeType: "image/jpeg",
     presentation: "imageFile",
     telegramFileId: photo.id.toString(),
     telegramObjectKind: "photo",
+    thumbSize: photo.sizes.at(-1)?.type ?? "",
   };
 };
 
 const normalizePhoto = (
   media: Api.MessageMediaPhoto
 ): {
-  readonly files: readonly TelegramFileCandidate[];
+  readonly files: readonly TelegramMediaFileCandidate[];
   readonly media: TelegramPhotoMedia;
   readonly warnings: readonly TelegramNormalizationWarning[];
 } => {
@@ -147,7 +151,7 @@ const normalizePhoto = (
   const primaryFile = photoFileCandidate(photo, sizes);
 
   return {
-    files: [primaryFile],
+    files: [{ file: primaryFile, mediaRole: "primary" }],
     media: {
       ...(normalizeEphemeral(media.ttlSeconds) === undefined
         ? {}
@@ -166,7 +170,7 @@ const normalizePhoto = (
 const normalizeDocument = (
   media: Api.MessageMediaDocument
 ): {
-  readonly files: readonly TelegramFileCandidate[];
+  readonly files: readonly TelegramMediaFileCandidate[];
   readonly media: TelegramDocumentMedia;
   readonly warnings: readonly TelegramNormalizationWarning[];
 } => {
@@ -202,7 +206,6 @@ const normalizeDocument = (
     dcId: document.dcId,
     expectedSize: document.size.toString(),
     fileReferenceBase64: document.fileReference.toString("base64"),
-    mediaRole: "primary",
     mimeType: document.mimeType,
     ...(attributes.fileName === undefined
       ? {}
@@ -217,13 +220,16 @@ const normalizeDocument = (
   const videoCoverFile =
     videoCover === undefined
       ? undefined
-      : photoFileCandidate(videoCover, videoCoverSizes, "videoCover");
+      : photoFileCandidate(videoCover, videoCoverSizes);
 
   return {
     files:
       videoCoverFile === undefined
-        ? [primaryFile]
-        : [primaryFile, videoCoverFile],
+        ? [{ file: primaryFile, mediaRole: "primary" }]
+        : [
+            { file: primaryFile, mediaRole: "primary" },
+            { file: videoCoverFile, mediaRole: "videoCover" },
+          ],
     media: {
       alternativeDocumentIds: (media.altDocuments ?? []).map((alternative) =>
         alternative.id.toString()
@@ -251,7 +257,7 @@ const normalizeGeoPoint = (geo: Api.TypeGeoPoint) =>
   geo instanceof Api.GeoPoint ? { latitude: geo.lat, longitude: geo.long } : {};
 
 interface TelegramMediaNormalizationResult {
-  readonly files: readonly TelegramFileCandidate[];
+  readonly files: readonly TelegramMediaFileCandidate[];
   readonly media?: TelegramMedia;
   readonly warnings: readonly TelegramNormalizationWarning[];
 }

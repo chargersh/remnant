@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { BunCrypto } from "@effect/platform-bun";
 import bigInt from "big-integer";
 import { Effect } from "effect";
+import { Api } from "telegram";
 import {
   normalizeTelegramMessage,
   normalizeTelegramMessageContent,
@@ -56,16 +57,23 @@ describe("normalizeTelegramMessage", () => {
 
     expect(result.discoveredFiles).toEqual([
       {
-        accessHash: "90071992547409931",
-        dcId: 2,
-        expectedSize: "1024000",
-        fileReferenceBase64: "AQID",
-        mediaRole: "primary",
-        mimeType: "video/mp4",
-        originalFileName: "clip.mp4",
-        presentation: "video",
-        telegramFileId: "90071992547409932",
-        telegramObjectKind: "document",
+        file: {
+          accessHash: "90071992547409931",
+          dcId: 2,
+          expectedSize: "1024000",
+          fileReferenceBase64: "AQID",
+          mimeType: "video/mp4",
+          originalFileName: "clip.mp4",
+          presentation: "video",
+          telegramFileId: "90071992547409932",
+          telegramObjectKind: "document",
+        },
+        source: {
+          mediaRole: "primary",
+          peer: { peerId: "84", peerKind: "user" },
+          telegramMessageId: 101,
+          type: "messageMedia",
+        },
       },
     ]);
   });
@@ -132,6 +140,59 @@ describe("normalizeTelegramMessage", () => {
         },
       },
     });
+  });
+
+  test("propagates warnings from unsupported reply quote entities", async () => {
+    const result = await runNormalize(
+      makeTextMessageFixture({
+        replyTo: new Api.MessageReplyHeader({
+          quoteEntities: [
+            new Api.MessageEntityUnknown({ length: 5, offset: 0 }),
+          ],
+          quoteText: "quote",
+          replyToMsgId: 99,
+        }),
+      })
+    );
+
+    expect(result.message).toMatchObject({
+      kind: "message",
+      reply: {
+        quoteEntities: [
+          {
+            length: 5,
+            offset: 0,
+            telegramConstructor: "MessageEntityUnknown",
+            type: "unknown",
+          },
+        ],
+        quoteText: "quote",
+        replyToMessageId: 99,
+      },
+    });
+    expect(result.warnings).toContainEqual({
+      code: "unsupportedEntity",
+      telegramConstructor: "MessageEntityUnknown",
+    });
+  });
+
+  test("keeps photo download size and source identity", async () => {
+    const result = await runNormalize(makePhotoMessageFixture());
+
+    expect(result.discoveredFiles).toEqual([
+      expect.objectContaining({
+        file: expect.objectContaining({
+          telegramObjectKind: "photo",
+          thumbSize: "x",
+        }),
+        source: {
+          mediaRole: "primary",
+          peer: { peerId: "84", peerKind: "user" },
+          telegramMessageId: 104,
+          type: "messageMedia",
+        },
+      }),
+    ]);
   });
 
   test("content normalization is deterministic without clock access", async () => {
