@@ -1,0 +1,148 @@
+import { describe, expect, test } from "bun:test";
+import { BunCrypto } from "@effect/platform-bun";
+import bigInt from "big-integer";
+import { Effect } from "effect";
+import {
+  normalizeTelegramMessage,
+  normalizeTelegramMessageContent,
+} from "./message-normalizer";
+import {
+  makeDocumentMessageFixture,
+  makeEmptyMessageFixture,
+  makePhotoMessageFixture,
+  makeServiceMessageFixture,
+  makeTextMessageFixture,
+} from "./test-fixtures";
+
+const observedAt = 1_800_000_000_000;
+const SHA_256_HEX_PATTERN = /^[a-f0-9]{64}$/;
+const runNormalize = (source: Parameters<typeof normalizeTelegramMessage>[0]) =>
+  Effect.runPromise(
+    normalizeTelegramMessage(source, { observedAt }).pipe(
+      Effect.provide(BunCrypto.layer)
+    )
+  );
+
+describe("normalizeTelegramMessage", () => {
+  test("preserves text entity UTF-16 offsets and long identifiers", async () => {
+    const result = await runNormalize(makeTextMessageFixture());
+
+    expect(result.message.kind).toBe("message");
+    if (result.message.kind !== "message") {
+      throw new Error("Expected an ordinary message");
+    }
+
+    expect(result.message.entities).toEqual([
+      {
+        length: 5,
+        offset: 0,
+        telegramConstructor: "MessageEntityBold",
+        type: "bold",
+      },
+      {
+        documentId: "90071992547409930",
+        length: 2,
+        offset: 6,
+        telegramConstructor: "MessageEntityCustomEmoji",
+        type: "customEmoji",
+      },
+    ]);
+    expect(result.message.peer).toEqual({ peerId: "84", peerKind: "user" });
+    expect(result.semanticHash).toMatch(SHA_256_HEX_PATTERN);
+  });
+
+  test("discovers document bytes without downloading them", async () => {
+    const result = await runNormalize(makeDocumentMessageFixture());
+
+    expect(result.discoveredFiles).toEqual([
+      {
+        accessHash: "90071992547409931",
+        dcId: 2,
+        expectedSize: "1024000",
+        fileReferenceBase64: "AQID",
+        mediaRole: "primary",
+        mimeType: "video/mp4",
+        originalFileName: "clip.mp4",
+        presentation: "video",
+        telegramFileId: "90071992547409932",
+        telegramObjectKind: "document",
+      },
+    ]);
+  });
+
+  test("normalizes service and empty constructors", async () => {
+    const service = await runNormalize(makeServiceMessageFixture());
+    const empty = await runNormalize(makeEmptyMessageFixture());
+
+    expect(service.message.kind).toBe("service");
+    expect(empty.message).toMatchObject({
+      kind: "empty",
+      peer: { peerId: "9", peerKind: "channel" },
+      telegramMessageId: 103,
+    });
+  });
+
+  test("volatile counters do not change the semantic hash", async () => {
+    const first = await runNormalize(makeTextMessageFixture({ views: 10 }));
+    const second = await runNormalize(makeTextMessageFixture({ views: 999 }));
+    const edited = await runNormalize(
+      makeTextMessageFixture({ message: "changed 😀" })
+    );
+
+    expect(first.semanticHash).toBe(second.semanticHash);
+    expect(first.semanticHash).not.toBe(edited.semanticHash);
+  });
+
+  test("operational file references do not change the semantic hash", async () => {
+    const first = await runNormalize(
+      makeDocumentMessageFixture([], {
+        accessHash: bigInt(1),
+        fileReference: Buffer.from([1, 2, 3]),
+      })
+    );
+    const refreshed = await runNormalize(
+      makeDocumentMessageFixture([], {
+        accessHash: bigInt(2),
+        fileReference: Buffer.from([9, 8, 7]),
+      })
+    );
+
+    expect(first.discoveredFiles).not.toEqual(refreshed.discoveredFiles);
+    expect(first.semanticHash).toBe(refreshed.semanticHash);
+  });
+
+  test("preserves timed and view-once semantics without touching media", async () => {
+    const timed = await runNormalize(makePhotoMessageFixture(30));
+    const viewOnce = await runNormalize(makePhotoMessageFixture(0x7f_ff_ff_ff));
+
+    expect(timed.message).toMatchObject({
+      media: {
+        ephemeral: {
+          mode: "timed",
+          preservationResult: "pending",
+          ttlSeconds: 30,
+        },
+      },
+    });
+    expect(viewOnce.message).toMatchObject({
+      media: {
+        ephemeral: {
+          mode: "viewOnce",
+          preservationResult: "pending",
+        },
+      },
+    });
+  });
+
+  test("content normalization is deterministic without clock access", async () => {
+    const source = makeTextMessageFixture();
+    const first = await Effect.runPromise(
+      normalizeTelegramMessageContent(source, { observedAt })
+    );
+    const second = await Effect.runPromise(
+      normalizeTelegramMessageContent(source, { observedAt })
+    );
+
+    expect(first).toEqual(second);
+  });
+});
