@@ -44,7 +44,7 @@ export type TelegramOperation =
   | "authorizationCheck"
   | "clientConnect"
   | "clientCreation"
-  | "clientDisconnect"
+  | "clientDestroy"
   | "dialogList"
   | "fileDownload"
   | "historyFetch"

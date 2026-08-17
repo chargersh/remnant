@@ -135,16 +135,16 @@ Implemented retry ownership for the current collector foundation:
 
 ## Telegram client shutdown lifecycle
 
-- [ ] Use GramJS `client.destroy()` for terminal Effect-scope finalization so
+- [x] Use GramJS `client.destroy()` for terminal Effect-scope finalization so
       the update/ping loop, exported senders, and event handlers are stopped;
       reserve `client.disconnect()` for an intentionally reusable client that
       may reconnect later.
-- [ ] Make terminal cleanup idempotent and ensure it runs exactly once on
+- [x] Make terminal cleanup idempotent and ensure it runs exactly once on
       success, typed failure, defect, and interruption.
 - [ ] Verify one-shot commands exit without a delayed update-loop `TIMEOUT`,
       background reconnect, unhandled rejection, or false error log after their
       work and output file have completed.
-- [ ] Preserve safe classified cleanup diagnostics without turning a successful
+- [x] Preserve safe classified cleanup diagnostics without turning a successful
       collection into a failure solely because terminal cleanup encountered an
       error.
 - [ ] Add a scoped lifecycle test plus a dedicated-account integration check

@@ -42,8 +42,8 @@ export class TelegramConnectionError extends Data.TaggedError(
   readonly failure: TelegramFailure;
 }> {}
 
-class TelegramDisconnectionError extends Data.TaggedError(
-  "TelegramDisconnectionError"
+class TelegramDestructionError extends Data.TaggedError(
+  "TelegramDestructionError"
 )<{
   readonly failure: TelegramFailure;
 }> {}
@@ -91,27 +91,40 @@ const createClient = (config: TelegramClientConfig) =>
       }),
   });
 
-const disconnectClient = (client: GramJsTelegramClient) =>
-  Effect.tryPromise({
-    try: () => client.disconnect(),
-    catch: (cause) =>
-      new TelegramDisconnectionError({
-        failure: classifyTelegramError(cause, {
-          operation: "clientDisconnect",
+const makeDestroyClient = (client: GramJsTelegramClient) => {
+  let destroyStarted = false;
+
+  return Effect.suspend(() => {
+    if (destroyStarted) {
+      return Effect.void;
+    }
+
+    destroyStarted = true;
+
+    return Effect.tryPromise({
+      try: () => client.destroy(),
+      catch: (cause) =>
+        new TelegramDestructionError({
+          failure: classifyTelegramError(cause, {
+            operation: "clientDestroy",
+          }),
         }),
-      }),
-  }).pipe(
-    Effect.catch((error) =>
-      Effect.logWarning("Failed to disconnect the Telegram client cleanly", {
-        error: error.failure.summary,
-      })
-    )
-  );
+    }).pipe(
+      Effect.catch((error) =>
+        Effect.logWarning("Failed to destroy the Telegram client cleanly", {
+          error: error.failure.summary,
+        })
+      )
+    );
+  });
+};
 
 export const makeTelegramClientResource = Effect.fn(
   "TelegramClient.makeResource"
 )(function* (config: TelegramClientConfig) {
-  return yield* Effect.acquireRelease(createClient(config), disconnectClient);
+  return yield* Effect.acquireRelease(createClient(config), (client) =>
+    makeDestroyClient(client)
+  );
 });
 
 export const makeTelegramClient = Effect.fn("TelegramClient.make")(function* (
