@@ -41,6 +41,7 @@ export const selectTelegramSemanticContent = (message: TelegramMessage) => {
     return {
       action: message.action,
       kind: message.kind,
+      outgoing: message.outgoing,
       peer: message.peer,
       sender: message.sender,
       sentAt: message.sentAt,
@@ -53,6 +54,7 @@ export const selectTelegramSemanticContent = (message: TelegramMessage) => {
     forward: message.forward,
     groupedId: message.groupedId,
     media: selectSemanticMedia(message.media),
+    outgoing: message.outgoing,
     peer: message.peer,
     reply: message.reply,
     sender: message.sender,

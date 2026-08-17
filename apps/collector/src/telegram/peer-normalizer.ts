@@ -8,6 +8,19 @@ export class TelegramPeerNormalizationError extends Data.TaggedError(
   readonly telegramConstructor: string;
 }> {}
 
+const telegramConstructorOf = (value: unknown) => {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "className" in value &&
+    typeof value.className === "string"
+  ) {
+    return value.className;
+  }
+
+  return "unknown";
+};
+
 export const normalizeTelegramPeer = Effect.fn("TelegramPeer.normalize")(
   function* (peer: Api.TypePeer) {
     if (peer instanceof Api.PeerUser) {
@@ -32,8 +45,7 @@ export const normalizeTelegramPeer = Effect.fn("TelegramPeer.normalize")(
     }
 
     return yield* new TelegramPeerNormalizationError({
-      telegramConstructor:
-        (peer as { className?: string }).className ?? "unknown",
+      telegramConstructor: telegramConstructorOf(peer),
     });
   }
 );

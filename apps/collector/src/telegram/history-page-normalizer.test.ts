@@ -20,6 +20,7 @@ describe("normalizeTelegramHistoryPage", () => {
     const program = Effect.gen(function* () {
       const page = yield* decodeTelegramHistoryPage(source);
       return yield* normalizeTelegramHistoryPage(page, {
+        accountPeerId: "1",
         observedAt: 1_800_000_000_000,
         rawSourceBatchId: "raw-test-batch",
       });

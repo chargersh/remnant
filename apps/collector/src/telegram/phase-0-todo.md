@@ -133,11 +133,116 @@ Implemented retry ownership for the current collector foundation:
 - Cancellation remains Effect interruption and is not wrapped or retried as a
   Telegram operation failure.
 
+## Telegram client shutdown lifecycle
+
+- [ ] Use GramJS `client.destroy()` for terminal Effect-scope finalization so
+      the update/ping loop, exported senders, and event handlers are stopped;
+      reserve `client.disconnect()` for an intentionally reusable client that
+      may reconnect later.
+- [ ] Make terminal cleanup idempotent and ensure it runs exactly once on
+      success, typed failure, defect, and interruption.
+- [ ] Verify one-shot commands exit without a delayed update-loop `TIMEOUT`,
+      background reconnect, unhandled rejection, or false error log after their
+      work and output file have completed.
+- [ ] Preserve safe classified cleanup diagnostics without turning a successful
+      collection into a failure solely because terminal cleanup encountered an
+      error.
+- [ ] Add a scoped lifecycle test plus a dedicated-account integration check
+      that connects, performs one request, finalizes, and proves no GramJS work
+      remains active afterward.
+
 ## Remaining Telegram fixture and normalization work
 
 The current tests construct useful synthetic GramJS objects. Phase 0 still asks
 for sanitized fixtures captured from dedicated test accounts so the code is
 validated against real GramJS response shapes.
+
+### Coverage gaps confirmed by the live history probe
+
+- [ ] Complete `MessageMediaWebPage` preservation:
+  - [ ] Keep the normalized URL, title, and description already supported.
+  - [ ] Discover Telegram-cached `WebPage.photo` and `WebPage.document` assets
+        as self-contained file candidates with distinct webpage-preview roles.
+  - [ ] Preserve enough source identity to refresh an expired file reference by
+        refetching the containing message.
+  - [ ] Do not crawl or download the external destination URL; only preserve
+        preview assets returned and hosted by Telegram.
+  - [ ] Cover full, empty, pending, and unsupported webpage constructors with a
+        sanitized real fixture and deterministic normalization tests.
+- [ ] Support `MessageMediaPaidMedia` without purchasing or unlocking content:
+  - [ ] Normalize the Stars price, item count, and an explicit per-item
+        `lockedPreview | availableMedia` state.
+  - [ ] Preserve preview dimensions, optional video duration, and inline
+        stripped/cached thumbnail bytes returned in
+        `MessageExtendedMediaPreview`.
+  - [ ] Recursively normalize `MessageExtendedMedia.media` when Telegram has
+        already made the full photo/document available, and emit its files
+        through the ordinary discovery pipeline.
+  - [ ] Never invoke a purchase/unlock operation automatically and never report
+        preview-only paid media as fully preserved.
+  - [ ] Include price and meaningful item metadata in semantic hashing while
+        excluding refreshable access hashes/file references.
+  - [ ] Add sanitized fixtures for preview-only, mixed, and fully available
+        paid media, including nullable preview fields and multiple items.
+- [ ] Preserve downloadable Telegram document thumbnails as file candidates:
+  - [ ] Emit candidates for downloadable `PhotoSize` and
+        `PhotoSizeProgressive` document thumbnails instead of retaining only
+        their dimensions and expected byte sizes.
+  - [ ] Include the parent document ID/access hash/file reference/DC plus the
+        Telegram thumbnail `type` required to construct the download location.
+  - [ ] Give each thumbnail an explicit `documentThumbnail` media role and an
+        object identity distinct from the original document, even though both
+        use the same Telegram document ID.
+  - [ ] Keep `PhotoStrippedSize` and `PhotoCachedSize` bytes inline in metadata;
+        do not schedule a redundant Telegram download for bytes already present.
+  - [ ] Preserve the containing peer/message source locator so an expired file
+        reference can be refreshed before downloading the thumbnail.
+  - [ ] Add deterministic tests based on the observed video with an `m`
+        thumbnail and cover documents with multiple thumbnail sizes.
+- [ ] Support `MessageActionStarGiftUnique` as a structured service action:
+  - [ ] Normalize stable gift identity, title/slug/number, supply, ownership and
+        transfer state, Stars values, and model/pattern/backdrop attributes.
+  - [ ] Discover the nested Telegram model and pattern documents (including
+        animated `.tgs` assets) with explicit Star Gift media roles and a
+        refreshable containing-message source locator.
+  - [ ] Include meaningful Star Gift fields in semantic hashing while excluding
+        refreshable file references and other operational download data.
+  - [ ] Add a sanitized real fixture based on the observed constructor and test
+        structured output, warnings, raw fallback, and file discovery.
+- [ ] Support `MessageActionPhoneCall` as a structured, metadata-only service
+      action:
+  - [ ] Preserve the call ID as a decimal string, audio/video mode, optional
+        duration, and incoming/outgoing direction already normalized on the
+        containing message.
+  - [ ] Normalize missed, disconnected, hangup, busy, and allow-group-call
+        discard reasons as an explicit tagged union with the original Telegram
+        constructor retained.
+  - [ ] Keep `PhoneCallDiscardReasonAllowGroupCall.encryptedKey` in the raw batch
+        only; do not expose it in normalized records, logs, or warning context.
+  - [ ] Treat phone-call actions as metadata only. Do not claim that call audio
+        or video recordings are available as discovered files.
+  - [ ] Add sanitized fixtures for incoming/outgoing audio and video calls,
+        completed durations, missed/busy calls, absent nullable fields, and each
+        supported discard reason.
+- [ ] Support the group-call service-action family as structured metadata:
+  - [ ] Normalize `MessageActionGroupCall` with a decimal-string call ID,
+        optional duration, sender, direction, and a clear started/ended state.
+  - [ ] Normalize `MessageActionGroupCallScheduled` with its call ID and
+        scheduled timestamp, and `MessageActionInviteToGroupCall` with invited
+        user IDs.
+  - [ ] Keep `InputGroupCall.accessHash` in operational/raw data only; do not
+        persist it in UI-facing records or logs.
+  - [ ] Treat these actions as call-history metadata, not evidence that a live
+        stream or recording is available for media preservation.
+  - [ ] Include meaningful group-call state in semantic hashing and add
+        sanitized fixtures for started, completed, scheduled, and invitation
+        actions, including nullable duration.
+- [ ] Give aggregated page warnings source provenance such as Telegram message
+      ID and message index so repeated constructors remain attributable, while
+      retaining the warning on its individual message envelope.
+- [ ] Extend the discovered-file contract beyond `primary | videoCover` and
+      top-level `messageMedia` so document thumbnails, webpage previews, and
+      service-action assets have explicit, type-safe source roles.
 
 - [ ] Capture and sanitize real ordinary, service, and empty message fixtures.
 - [ ] Add fixture coverage for plain text, formatting/entities, replies,
@@ -172,8 +277,88 @@ validated against real GramJS response shapes.
       interleaving in Phase 1 rather than hiding those policies inside
       `fetchPage`.
 
+## Reply, comment, and thread preservation
+
+- [ ] Preserve ordinary same-dialog replies in users, Saved Messages, basic
+      groups, and supergroups as normal messages with `replyToMessageId`,
+      `replyToPeer`, quote metadata, and `replyToTopId` when Telegram supplies
+      them.
+- [ ] Keep a reply relationship even when its parent is outside the current
+      history window, deleted, or otherwise unavailable; resolve the parent
+      later without dropping the reply.
+- [ ] Preserve channel-comment routing metadata from `MessageReplies`, including
+      whether the thread is comments, the linked discussion peer, and the
+      channel post/thread anchor—not only `replyCount`.
+- [ ] For albums, identify the grouped sibling that owns `MessageReplies` as the
+      comment-thread anchor and expose one aggregate reply state for the album.
+- [ ] Backfill complete channel-comment and other explicit thread histories with
+      bounded, resumable `messages.getReplies` pagination; storing a count alone
+      is not reply preservation.
+- [ ] Cover forum-topic roots and replies without conflating topic anchoring,
+      direct message replies, and channel discussion comments.
+- [ ] Capture new, edited, and deleted replies through live update handlers,
+      including replies in linked discussion groups.
+- [ ] Deduplicate replies by peer kind/ID plus message ID when the same reply is
+      encountered through both normal dialog history and explicit thread fetch.
+- [ ] Store reply pages in required raw batches and normalize reply text,
+      entities, media, service actions, and discovered files through the same
+      pipeline as other messages.
+- [ ] Add sanitized real fixtures and integration coverage for a user-to-user
+      reply, group reply, forum topic, channel comment thread, and album whose
+      `MessageReplies` metadata exists on only one grouped sibling.
+
+## Reaction preservation
+
+- [ ] Normalize `MessageReactions` into mutable message `currentState`; reaction
+      changes must not create immutable message revisions.
+- [ ] Support `ReactionEmoji`, `ReactionCustomEmoji`, `ReactionPaid`, and
+      `ReactionEmpty` with explicit tagged contracts and decimal-string custom
+      emoji document IDs.
+- [ ] Preserve aggregate `ReactionCount` values, the authenticated account's
+      selection/`chosenOrder`, and Telegram's `min`, `canSeeList`, and
+      `reactionsAsTags` completeness flags.
+- [ ] Preserve recent peer reactions and top-reactor summaries only when
+      Telegram supplies them, including peer identity, date, unread/my/big
+      state, counts, and anonymous reactors without inventing an identity.
+- [ ] Decide identity retention explicitly before schema work. Recommended
+      initial scope: current aggregates plus Telegram's currently visible
+      recent/top reactors, not a fabricated historical reaction timeline.
+- [ ] Resolve custom-emoji reaction documents through the reusable custom-emoji
+      asset pipeline without treating a document ID alone as downloadable file
+      metadata.
+- [ ] Apply `UpdateMessageReactions` through live handlers and reconcile missed
+      updates during message refresh/backfill idempotently.
+- [ ] Keep reactions in raw batches even when a new reaction constructor is not
+      normalized; emit an observable warning rather than failing the page.
+- [ ] Add sanitized fixtures and deterministic tests for no reactions, ordinary
+      emoji, custom emoji, paid reactions, the account's selected reaction,
+      anonymous/top reactors, partial (`min`) results, and live count changes.
+
 ## Ephemeral-media safety validation
 
+- [ ] Distinguish an accessible ephemeral file from an already unavailable
+      ephemeral shell during normalization:
+  - [ ] When `MessageMediaPhoto.photo` or `MessageMediaDocument.document` is
+        absent but a positive TTL remains, preserve the TTL/mode and set
+        `preservationResult: "unavailable"` instead of leaving it `"pending"`.
+  - [ ] Use an explicit `ephemeralMediaUnavailable` warning/reason rather than
+        the generic `emptyPhoto`/`emptyDocument` warning, while avoiding an
+        unsupported claim about whether it expired, was opened, or was consumed.
+  - [ ] Emit no file candidate and schedule no futile download when Telegram
+        provides no photo/document identity or location.
+  - [ ] Keep ordinary non-ephemeral empty photo/document constructors distinct
+        from unavailable timed/view-once media.
+  - [ ] Add a derived `expiredMediaPlaceholder` presentation for unavailable
+        ephemeral media so the UI can render Telegram-style service-like
+        “photo/video expired” history entries without changing the underlying
+        source discriminator from `kind: "message"` to `kind: "service"`.
+  - [ ] Test that placeholder presentation retains the original media subtype,
+        TTL/mode, sender, direction, and timestamp while exposing no nonexistent
+        file or download action.
+  - [ ] Include the terminal unavailable state and original TTL semantics in
+        semantic content and user-visible preservation status.
+- [ ] Add sanitized fixtures for accessible and already unavailable timed
+      photos/documents plus accessible and unavailable view-once variants.
 - [ ] Using dedicated accounts, test each accessible timed/view-once subtype.
 - [ ] Verify whether obtaining metadata changes viewed/read state.
 - [ ] Verify whether downloading through GramJS changes viewed/read state.

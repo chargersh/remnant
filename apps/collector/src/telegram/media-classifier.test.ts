@@ -57,4 +57,21 @@ describe("classifyTelegramDocument", () => {
     expect(classify([], "image/png")).toBe("imageFile");
     expect(classify([], "application/pdf")).toBe("file");
   });
+
+  test("accepts nullable audio metadata returned by GramJS", () => {
+    const audio = new Api.DocumentAttributeAudio({
+      duration: 439,
+      performer: "Podcast author",
+      title: "Episode",
+    });
+    Reflect.set(audio, "performer", null);
+    Reflect.set(audio, "title", null);
+    Reflect.set(audio, "waveform", null);
+
+    expect(normalizeTelegramDocumentAttributes([audio]).audio).toEqual({
+      durationSeconds: 439,
+      voice: false,
+    });
+    expect(classify([audio], "audio/mpeg")).toBe("audio");
+  });
 });

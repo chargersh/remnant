@@ -21,9 +21,9 @@ interface TelegramMediaFileCandidate {
 }
 
 const normalizeEphemeral = (
-  ttlSeconds: number | undefined
+  ttlSeconds: number | null | undefined
 ): TelegramEphemeralMedia | undefined => {
-  if (ttlSeconds === undefined || ttlSeconds <= 0) {
+  if (ttlSeconds === null || ttlSeconds === undefined || ttlSeconds <= 0) {
     return;
   }
 
@@ -277,12 +277,16 @@ const normalizeWebPage = (
   const url = canHaveUrl ? webPage.url : undefined;
 
   return normalizedMetadataMedia({
-    ...(webPage instanceof Api.WebPage && webPage.description !== undefined
+    ...(webPage instanceof Api.WebPage &&
+    webPage.description !== null &&
+    webPage.description !== undefined
       ? { description: webPage.description }
       : {}),
     telegramConstructor: source.className,
     telegramType: "webPage",
-    ...(webPage instanceof Api.WebPage && webPage.title !== undefined
+    ...(webPage instanceof Api.WebPage &&
+    webPage.title !== null &&
+    webPage.title !== undefined
       ? { title: webPage.title }
       : {}),
     ...(url === undefined ? {} : { url }),
@@ -363,9 +367,13 @@ const normalizeNonFileMedia = (
 };
 
 export const normalizeTelegramMedia = (
-  source: Api.TypeMessageMedia | undefined
+  source: Api.TypeMessageMedia | null | undefined
 ): TelegramMediaNormalizationResult => {
-  if (source === undefined || source instanceof Api.MessageMediaEmpty) {
+  if (
+    source === null ||
+    source === undefined ||
+    source instanceof Api.MessageMediaEmpty
+  ) {
     return { files: [], warnings: [] };
   }
 

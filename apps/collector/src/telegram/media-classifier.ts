@@ -48,14 +48,17 @@ export const normalizeTelegramDocumentAttributes = (
       ? undefined
       : {
           durationSeconds: audioAttribute.duration,
-          ...(audioAttribute.performer === undefined
+          ...(audioAttribute.performer === null ||
+          audioAttribute.performer === undefined
             ? {}
             : { performer: audioAttribute.performer }),
-          ...(audioAttribute.title === undefined
+          ...(audioAttribute.title === null ||
+          audioAttribute.title === undefined
             ? {}
             : { title: audioAttribute.title }),
           voice: audioAttribute.voice === true,
-          ...(audioAttribute.waveform === undefined
+          ...(audioAttribute.waveform === null ||
+          audioAttribute.waveform === undefined
             ? {}
             : { waveformBase64: audioAttribute.waveform.toString("base64") }),
         };

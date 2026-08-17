@@ -121,7 +121,7 @@ export const normalizeTelegramEntity = (
 };
 
 export const normalizeTelegramEntities = (
-  entities: readonly Api.TypeMessageEntity[] | undefined
+  entities: readonly Api.TypeMessageEntity[] | null | undefined
 ) => {
   const normalized: TelegramMessageEntity[] = [];
   const warnings: TelegramNormalizationWarning[] = [];

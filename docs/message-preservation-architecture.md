@@ -864,6 +864,7 @@ Representative fields:
   telegramMessageId,
 
   telegramConstructor: "message" | "service" | "empty",
+  outgoing?: boolean,
   sender?: {
     peerKind: "user" | "chat" | "channel",
     peerId: string,
@@ -907,6 +908,14 @@ Representative fields:
   rawSourceBatchId?,
 }
 ```
+
+For ordinary and service messages, preserve Telegram's `out` flag as
+`outgoing`. GramJS may return `fromId: null` for private messages even when
+authorship is unambiguous: an outgoing message is sent by the authenticated
+account, while an incoming private message is sent by the dialog peer.
+Normalize that sender explicitly using the authenticated account peer; never
+use the dialog peer as a universal substitute for authorship. Empty message
+placeholders have no direction.
 
 Convex messages are limited to 1 MiB. Normalizers must bound nested arrays and
 route unexpectedly large or unknown payloads to raw R2 storage rather than

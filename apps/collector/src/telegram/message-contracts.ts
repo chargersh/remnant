@@ -293,6 +293,7 @@ export interface TelegramOrdinaryMessage extends TelegramMessageBase {
   readonly groupedId?: string;
   readonly kind: "message";
   readonly media?: TelegramMedia;
+  readonly outgoing: boolean;
   readonly reply?: TelegramReply;
   readonly sender?: TelegramPeer;
   readonly sentAt: number;
@@ -302,6 +303,7 @@ export interface TelegramOrdinaryMessage extends TelegramMessageBase {
 export interface TelegramServiceMessage extends TelegramMessageBase {
   readonly action: TelegramServiceAction;
   readonly kind: "service";
+  readonly outgoing: boolean;
   readonly sender?: TelegramPeer;
   readonly sentAt: number;
 }

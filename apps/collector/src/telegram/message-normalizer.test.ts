@@ -19,9 +19,10 @@ const observedAt = 1_800_000_000_000;
 const SHA_256_HEX_PATTERN = /^[a-f0-9]{64}$/;
 const runNormalize = (source: Parameters<typeof normalizeTelegramMessage>[0]) =>
   Effect.runPromise(
-    normalizeTelegramMessage(source, { observedAt }).pipe(
-      Effect.provide(BunCrypto.layer)
-    )
+    normalizeTelegramMessage(source, {
+      accountPeerId: "1",
+      observedAt,
+    }).pipe(Effect.provide(BunCrypto.layer))
   );
 
 describe("normalizeTelegramMessage", () => {
@@ -50,6 +51,51 @@ describe("normalizeTelegramMessage", () => {
     ]);
     expect(result.message.peer).toEqual({ peerId: "84", peerKind: "user" });
     expect(result.semanticHash).toMatch(SHA_256_HEX_PATTERN);
+  });
+
+  test("accepts nullable fields and infers private-chat senders", async () => {
+    const source = makeTextMessageFixture();
+    for (const field of [
+      "editDate",
+      "forwards",
+      "fromId",
+      "fwdFrom",
+      "groupedId",
+      "media",
+      "replies",
+      "replyTo",
+      "views",
+    ]) {
+      Reflect.set(source, field, null);
+    }
+
+    const result = await runNormalize(source);
+
+    expect(result.message.peer).toEqual({
+      peerId: "84",
+      peerKind: "user",
+    });
+    expect(result.message).toMatchObject({
+      outgoing: false,
+      sender: { peerId: "84", peerKind: "user" },
+    });
+    expect(result.message).not.toHaveProperty("editDate");
+    expect(result.message).not.toHaveProperty("forward");
+    expect(result.message).not.toHaveProperty("groupedId");
+    expect(result.message).not.toHaveProperty("media");
+    expect(result.message).not.toHaveProperty("reply");
+    expect(result.message).toMatchObject({
+      currentState: { pinned: false },
+    });
+
+    const outgoingSource = makeTextMessageFixture({ out: true });
+    Reflect.set(outgoingSource, "fromId", null);
+    const outgoingResult = await runNormalize(outgoingSource);
+
+    expect(outgoingResult.message).toMatchObject({
+      outgoing: true,
+      sender: { peerId: "1", peerKind: "user" },
+    });
   });
 
   test("discovers document bytes without downloading them", async () => {
@@ -198,10 +244,16 @@ describe("normalizeTelegramMessage", () => {
   test("content normalization is deterministic without clock access", async () => {
     const source = makeTextMessageFixture();
     const first = await Effect.runPromise(
-      normalizeTelegramMessageContent(source, { observedAt })
+      normalizeTelegramMessageContent(source, {
+        accountPeerId: "1",
+        observedAt,
+      })
     );
     const second = await Effect.runPromise(
-      normalizeTelegramMessageContent(source, { observedAt })
+      normalizeTelegramMessageContent(source, {
+        accountPeerId: "1",
+        observedAt,
+      })
     );
 
     expect(first).toEqual(second);
