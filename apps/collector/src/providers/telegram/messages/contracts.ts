@@ -216,6 +216,32 @@ export interface TelegramForward {
   readonly savedFromPeer?: TelegramPeer;
 }
 
+export type TelegramPhoneCallDiscardReason =
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "missed";
+    }
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "disconnected";
+    }
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "hangup";
+    }
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "busy";
+    }
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "allowGroupCall";
+    }
+  | {
+      readonly telegramConstructor: string;
+      readonly type: "unsupported";
+    };
+
 export type TelegramServiceAction =
   | {
       readonly telegramConstructor: string;
@@ -267,6 +293,33 @@ export type TelegramServiceAction =
       readonly message: string;
       readonly telegramConstructor: string;
       readonly type: "custom";
+    }
+  | {
+      readonly callId: string;
+      readonly durationSeconds?: number;
+      readonly mode: "audio" | "video";
+      readonly reason?: TelegramPhoneCallDiscardReason;
+      readonly telegramConstructor: string;
+      readonly type: "phoneCall";
+    }
+  | {
+      readonly callId: string;
+      readonly durationSeconds?: number;
+      readonly state: "ended" | "started";
+      readonly telegramConstructor: string;
+      readonly type: "groupCall";
+    }
+  | {
+      readonly callId: string;
+      readonly scheduledAt: number;
+      readonly telegramConstructor: string;
+      readonly type: "groupCallScheduled";
+    }
+  | {
+      readonly callId: string;
+      readonly telegramConstructor: string;
+      readonly type: "groupCallInvitation";
+      readonly userIds: readonly string[];
     }
   | {
       readonly telegramConstructor: string;
@@ -323,6 +376,7 @@ export interface TelegramNormalizationWarning {
     | "emptyPhoto"
     | "unsupportedEntity"
     | "unsupportedMedia"
+    | "unsupportedPhoneCallDiscardReason"
     | "unsupportedServiceAction";
   readonly telegramConstructor: string;
 }

@@ -241,8 +241,9 @@ const runProbe = Effect.fn("TelegramHistoryProbe.run")(function* () {
   const outputDirectory = path.resolve(
     sourceDirectory,
     "..",
+    "..",
     ".artifacts",
-    "telegram-history"
+    "telegram"
   );
   const fileName = `history-${capturedAt.replaceAll(":", "-")}.json`;
   const outputPath = path.join(outputDirectory, fileName);

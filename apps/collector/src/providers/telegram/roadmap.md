@@ -211,32 +211,34 @@ validated against real GramJS response shapes.
         structured output, warnings, raw fallback, and file discovery.
 - [ ] Support `MessageActionPhoneCall` as a structured, metadata-only service
       action:
-  - [ ] Preserve the call ID as a decimal string, audio/video mode, optional
-        duration, and incoming/outgoing direction already normalized on the
-        containing message.
-  - [ ] Normalize missed, disconnected, hangup, busy, and allow-group-call
-        discard reasons as an explicit tagged union with the original Telegram
-        constructor retained.
-  - [ ] Keep `PhoneCallDiscardReasonAllowGroupCall.encryptedKey` in the raw batch
-        only; do not expose it in normalized records, logs, or warning context.
-  - [ ] Treat phone-call actions as metadata only. Do not claim that call audio
-        or video recordings are available as discovered files.
+  - [x] Preserve the call ID as a decimal string, audio/video mode, optional
+    duration, and incoming/outgoing direction already normalized on the
+    containing message.
+  - [x] Normalize missed, disconnected, hangup, busy, and allow-group-call
+    discard reasons as an explicit tagged union with the original Telegram
+    constructor retained.
+  - [x] Keep `PhoneCallDiscardReasonAllowGroupCall.encryptedKey` in the raw batch
+    only; do not expose it in normalized records, logs, or warning context.
+  - [x] Treat phone-call actions as metadata only. Do not claim that call audio
+    or video recordings are available as discovered files.
   - [ ] Add sanitized fixtures for incoming/outgoing audio and video calls,
         completed durations, missed/busy calls, absent nullable fields, and each
         supported discard reason.
 - [ ] Support the group-call service-action family as structured metadata:
-  - [ ] Normalize `MessageActionGroupCall` with a decimal-string call ID,
+  - [x] Normalize `MessageActionGroupCall` with a decimal-string call ID,
         optional duration, sender, direction, and a clear started/ended state.
-  - [ ] Normalize `MessageActionGroupCallScheduled` with its call ID and
+  - [x] Normalize `MessageActionGroupCallScheduled` with its call ID and
         scheduled timestamp, and `MessageActionInviteToGroupCall` with invited
         user IDs.
-  - [ ] Keep `InputGroupCall.accessHash` in operational/raw data only; do not
+  - [x] Keep `InputGroupCall.accessHash` in operational/raw data only; do not
         persist it in UI-facing records or logs.
-  - [ ] Treat these actions as call-history metadata, not evidence that a live
+  - [x] Treat these actions as call-history metadata, not evidence that a live
         stream or recording is available for media preservation.
-  - [ ] Include meaningful group-call state in semantic hashing and add
-        sanitized fixtures for started, completed, scheduled, and invitation
+  - [x] Include meaningful group-call state in semantic hashing and deterministic
+        synthetic coverage for started, completed, scheduled, and invitation
         actions, including nullable duration.
+  - [ ] Add sanitized real fixtures for started, completed, scheduled, and
+        invitation actions.
 - [ ] Give aggregated page warnings source provenance such as Telegram message
       ID and message index so repeated constructors remain attributable, while
       retaining the warning on its individual message envelope.

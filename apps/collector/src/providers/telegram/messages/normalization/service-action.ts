@@ -1,15 +1,55 @@
 import { Api } from "telegram";
 import type {
   TelegramNormalizationWarning,
+  TelegramPhoneCallDiscardReason,
   TelegramServiceAction,
 } from "@/providers/telegram/messages/contracts";
 
-export const normalizeTelegramServiceAction = (
-  action: Api.TypeMessageAction
-): {
+interface NormalizedServiceAction {
   readonly action: TelegramServiceAction;
   readonly warning?: TelegramNormalizationWarning;
+}
+
+const normalizePhoneCallDiscardReason = (
+  reason: Api.TypePhoneCallDiscardReason
+): {
+  readonly reason: TelegramPhoneCallDiscardReason;
+  readonly warning?: TelegramNormalizationWarning;
 } => {
+  const telegramConstructor = reason.className;
+
+  if (reason instanceof Api.PhoneCallDiscardReasonMissed) {
+    return { reason: { telegramConstructor, type: "missed" } };
+  }
+
+  if (reason instanceof Api.PhoneCallDiscardReasonDisconnect) {
+    return { reason: { telegramConstructor, type: "disconnected" } };
+  }
+
+  if (reason instanceof Api.PhoneCallDiscardReasonHangup) {
+    return { reason: { telegramConstructor, type: "hangup" } };
+  }
+
+  if (reason instanceof Api.PhoneCallDiscardReasonBusy) {
+    return { reason: { telegramConstructor, type: "busy" } };
+  }
+
+  if (reason instanceof Api.PhoneCallDiscardReasonAllowGroupCall) {
+    return { reason: { telegramConstructor, type: "allowGroupCall" } };
+  }
+
+  return {
+    reason: { telegramConstructor, type: "unsupported" },
+    warning: {
+      code: "unsupportedPhoneCallDiscardReason",
+      telegramConstructor,
+    },
+  };
+};
+
+const normalizeChatServiceAction = (
+  action: Api.TypeMessageAction
+): NormalizedServiceAction | undefined => {
   const telegramConstructor = action.className;
 
   if (action instanceof Api.MessageActionChatCreate) {
@@ -111,6 +151,65 @@ export const normalizeTelegramServiceAction = (
       },
     };
   }
+};
+
+const normalizeGroupCallServiceAction = (
+  action: Api.TypeMessageAction
+): NormalizedServiceAction | undefined => {
+  const telegramConstructor = action.className;
+
+  if (action instanceof Api.MessageActionGroupCall) {
+    const durationIsPresent =
+      action.duration !== undefined && action.duration !== null;
+
+    return {
+      action: {
+        callId: action.call.id.toString(),
+        ...(durationIsPresent ? { durationSeconds: action.duration } : {}),
+        state: durationIsPresent ? "ended" : "started",
+        telegramConstructor,
+        type: "groupCall",
+      },
+    };
+  }
+
+  if (action instanceof Api.MessageActionGroupCallScheduled) {
+    return {
+      action: {
+        callId: action.call.id.toString(),
+        scheduledAt: action.scheduleDate * 1000,
+        telegramConstructor,
+        type: "groupCallScheduled",
+      },
+    };
+  }
+
+  if (action instanceof Api.MessageActionInviteToGroupCall) {
+    return {
+      action: {
+        callId: action.call.id.toString(),
+        telegramConstructor,
+        type: "groupCallInvitation",
+        userIds: action.users.map(String),
+      },
+    };
+  }
+};
+
+export const normalizeTelegramServiceAction = (
+  action: Api.TypeMessageAction
+): NormalizedServiceAction => {
+  const telegramConstructor = action.className;
+  const chatAction = normalizeChatServiceAction(action);
+  const groupCallAction = normalizeGroupCallServiceAction(action);
+
+  if (chatAction !== undefined) {
+    return chatAction;
+  }
+
+  if (groupCallAction !== undefined) {
+    return groupCallAction;
+  }
 
   if (action instanceof Api.MessageActionPinMessage) {
     return {
@@ -131,6 +230,30 @@ export const normalizeTelegramServiceAction = (
         telegramConstructor,
         type: "historyTtlChanged",
       },
+    };
+  }
+
+  if (action instanceof Api.MessageActionPhoneCall) {
+    const normalizedReason = action.reason
+      ? normalizePhoneCallDiscardReason(action.reason)
+      : undefined;
+
+    return {
+      action: {
+        callId: action.callId.toString(),
+        ...(action.duration === undefined || action.duration === null
+          ? {}
+          : { durationSeconds: action.duration }),
+        mode: action.video === true ? "video" : "audio",
+        ...(normalizedReason === undefined
+          ? {}
+          : { reason: normalizedReason.reason }),
+        telegramConstructor,
+        type: "phoneCall",
+      },
+      ...(normalizedReason?.warning === undefined
+        ? {}
+        : { warning: normalizedReason.warning }),
     };
   }
 

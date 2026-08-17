@@ -87,6 +87,44 @@ export const makeServiceMessageFixture = () =>
     peerId: new Api.PeerChat({ chatId: bigInt(7) }),
   });
 
+export const makePhoneCallServiceMessageFixture = (
+  actionOverrides: Partial<
+    ConstructorParameters<typeof Api.MessageActionPhoneCall>[0]
+  > = {},
+  messageOverrides: Partial<
+    ConstructorParameters<typeof Api.MessageService>[0]
+  > = {}
+) =>
+  new Api.MessageService({
+    action: new Api.MessageActionPhoneCall({
+      callId: bigInt("90071992547409935"),
+      ...actionOverrides,
+    }),
+    date: TEST_DATE_SECONDS,
+    fromId: new Api.PeerUser({ userId: bigInt(42) }),
+    id: 105,
+    peerId: new Api.PeerUser({ userId: bigInt(84) }),
+    ...messageOverrides,
+  });
+
+export const makeGroupCallServiceMessageFixture = (
+  action:
+    | Api.MessageActionGroupCall
+    | Api.MessageActionGroupCallScheduled
+    | Api.MessageActionInviteToGroupCall,
+  messageOverrides: Partial<
+    ConstructorParameters<typeof Api.MessageService>[0]
+  > = {}
+) =>
+  new Api.MessageService({
+    action,
+    date: TEST_DATE_SECONDS,
+    fromId: new Api.PeerUser({ userId: bigInt(42) }),
+    id: 106,
+    peerId: new Api.PeerChannel({ channelId: bigInt(7) }),
+    ...messageOverrides,
+  });
+
 export const makeEmptyMessageFixture = () =>
   new Api.MessageEmpty({
     id: 103,

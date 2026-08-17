@@ -3,9 +3,12 @@ import { BunCrypto } from "@effect/platform-bun";
 import bigInt from "big-integer";
 import { Effect } from "effect";
 import { Api } from "telegram";
+import { encodeTelegramRawValue } from "@/providers/telegram/serialization/raw-value";
 import {
   makeDocumentMessageFixture,
   makeEmptyMessageFixture,
+  makeGroupCallServiceMessageFixture,
+  makePhoneCallServiceMessageFixture,
   makePhotoMessageFixture,
   makeServiceMessageFixture,
   makeTextMessageFixture,
@@ -133,6 +136,241 @@ describe("normalizeTelegramMessage", () => {
       kind: "empty",
       peer: { peerId: "9", peerKind: "channel" },
       telegramMessageId: 103,
+    });
+  });
+
+  test("normalizes phone calls as metadata without discovering recordings", async () => {
+    const result = await runNormalize(
+      makePhoneCallServiceMessageFixture(
+        {
+          duration: 42,
+          reason: new Api.PhoneCallDiscardReasonHangup(),
+          video: true,
+        },
+        { out: true }
+      )
+    );
+
+    expect(result.message).toMatchObject({
+      action: {
+        callId: "90071992547409935",
+        durationSeconds: 42,
+        mode: "video",
+        reason: {
+          telegramConstructor: "PhoneCallDiscardReasonHangup",
+          type: "hangup",
+        },
+        telegramConstructor: "MessageActionPhoneCall",
+        type: "phoneCall",
+      },
+      kind: "service",
+      outgoing: true,
+    });
+    expect(result.discoveredFiles).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("normalizes every installed phone-call discard reason without exposing keys", async () => {
+    const cases = [
+      [new Api.PhoneCallDiscardReasonMissed(), "missed"],
+      [new Api.PhoneCallDiscardReasonDisconnect(), "disconnected"],
+      [new Api.PhoneCallDiscardReasonHangup(), "hangup"],
+      [new Api.PhoneCallDiscardReasonBusy(), "busy"],
+      [
+        new Api.PhoneCallDiscardReasonAllowGroupCall({
+          encryptedKey: Buffer.from("private call key"),
+        }),
+        "allowGroupCall",
+      ],
+    ] as const;
+
+    for (const [reason, expectedType] of cases) {
+      const result = await runNormalize(
+        makePhoneCallServiceMessageFixture({ reason })
+      );
+
+      expect(result.message).toMatchObject({
+        action: {
+          mode: "audio",
+          reason: {
+            telegramConstructor: reason.className,
+            type: expectedType,
+          },
+          type: "phoneCall",
+        },
+        kind: "service",
+        outgoing: false,
+      });
+      expect(result.discoveredFiles).toEqual([]);
+      expect(JSON.stringify(result.message)).not.toContain("private call key");
+      expect(JSON.stringify(result.message)).not.toContain("encryptedKey");
+    }
+
+    const rawAllowGroupCall = await Effect.runPromise(
+      encodeTelegramRawValue(cases[4][0])
+    );
+
+    expect(rawAllowGroupCall).toEqual({
+      $type: "telegramConstructor",
+      constructor: "PhoneCallDiscardReasonAllowGroupCall",
+      fields: {
+        encryptedKey: {
+          $type: "bytes",
+          base64: "cHJpdmF0ZSBjYWxsIGtleQ==",
+        },
+      },
+    });
+  });
+
+  test("preserves absent phone-call metadata and hashes meaningful changes", async () => {
+    const nullableSource = makePhoneCallServiceMessageFixture({
+      duration: 12,
+      reason: new Api.PhoneCallDiscardReasonMissed(),
+    });
+    Reflect.set(nullableSource.action, "duration", null);
+    Reflect.set(nullableSource.action, "reason", null);
+
+    const audio = await runNormalize(nullableSource);
+    const video = await runNormalize(
+      makePhoneCallServiceMessageFixture({ video: true })
+    );
+
+    expect(audio.message).toMatchObject({
+      action: {
+        callId: "90071992547409935",
+        mode: "audio",
+        type: "phoneCall",
+      },
+      kind: "service",
+    });
+    expect(audio.message).not.toHaveProperty("action.durationSeconds");
+    expect(audio.message).not.toHaveProperty("action.reason");
+    expect(audio.semanticHash).not.toBe(video.semanticHash);
+  });
+
+  test("normalizes started and ended group-call service actions", async () => {
+    const call = new Api.InputGroupCall({
+      accessHash: bigInt("90071992547409941"),
+      id: bigInt("90071992547409940"),
+    });
+    const startedSource = makeGroupCallServiceMessageFixture(
+      new Api.MessageActionGroupCall({ call })
+    );
+    const endedSource = makeGroupCallServiceMessageFixture(
+      new Api.MessageActionGroupCall({ call, duration: 600 }),
+      {
+        fromId: new Api.PeerUser({ userId: bigInt(1) }),
+        out: true,
+      }
+    );
+    const nullableSource = makeGroupCallServiceMessageFixture(
+      new Api.MessageActionGroupCall({ call, duration: 1 })
+    );
+    Reflect.set(nullableSource.action, "duration", null);
+
+    const started = await runNormalize(startedSource);
+    const ended = await runNormalize(endedSource);
+    const nullable = await runNormalize(nullableSource);
+
+    expect(started.message).toMatchObject({
+      action: {
+        callId: "90071992547409940",
+        state: "started",
+        telegramConstructor: "MessageActionGroupCall",
+        type: "groupCall",
+      },
+      kind: "service",
+      outgoing: false,
+      sender: { peerId: "42", peerKind: "user" },
+    });
+    expect(started.message).not.toHaveProperty("action.durationSeconds");
+    expect(ended.message).toMatchObject({
+      action: {
+        callId: "90071992547409940",
+        durationSeconds: 600,
+        state: "ended",
+        type: "groupCall",
+      },
+      kind: "service",
+      outgoing: true,
+      sender: { peerId: "1", peerKind: "user" },
+    });
+    expect(nullable.message).toMatchObject({
+      action: { state: "started", type: "groupCall" },
+    });
+    expect(nullable.message).not.toHaveProperty("action.durationSeconds");
+    expect(started.discoveredFiles).toEqual([]);
+    expect(ended.discoveredFiles).toEqual([]);
+    expect(started.semanticHash).not.toBe(ended.semanticHash);
+  });
+
+  test("normalizes scheduled group calls and group-call invitations", async () => {
+    const call = new Api.InputGroupCall({
+      accessHash: bigInt("90071992547409941"),
+      id: bigInt("90071992547409940"),
+    });
+    const scheduled = await runNormalize(
+      makeGroupCallServiceMessageFixture(
+        new Api.MessageActionGroupCallScheduled({
+          call,
+          scheduleDate: 1_700_003_600,
+        })
+      )
+    );
+    const invitation = await runNormalize(
+      makeGroupCallServiceMessageFixture(
+        new Api.MessageActionInviteToGroupCall({
+          call,
+          users: [bigInt("90071992547409942"), bigInt(43)],
+        })
+      )
+    );
+
+    expect(scheduled.message).toMatchObject({
+      action: {
+        callId: "90071992547409940",
+        scheduledAt: 1_700_003_600_000,
+        telegramConstructor: "MessageActionGroupCallScheduled",
+        type: "groupCallScheduled",
+      },
+      kind: "service",
+    });
+    expect(invitation.message).toMatchObject({
+      action: {
+        callId: "90071992547409940",
+        telegramConstructor: "MessageActionInviteToGroupCall",
+        type: "groupCallInvitation",
+        userIds: ["90071992547409942", "43"],
+      },
+      kind: "service",
+    });
+    expect(scheduled.discoveredFiles).toEqual([]);
+    expect(invitation.discoveredFiles).toEqual([]);
+  });
+
+  test("keeps group-call access hashes only in raw preservation", async () => {
+    const call = new Api.InputGroupCall({
+      accessHash: bigInt("90071992547409941"),
+      id: bigInt("90071992547409940"),
+    });
+    const normalized = await runNormalize(
+      makeGroupCallServiceMessageFixture(
+        new Api.MessageActionGroupCall({ call })
+      )
+    );
+    const rawCall = await Effect.runPromise(encodeTelegramRawValue(call));
+
+    expect(JSON.stringify(normalized.message)).not.toContain("accessHash");
+    expect(JSON.stringify(normalized.message)).not.toContain(
+      "90071992547409941"
+    );
+    expect(rawCall).toEqual({
+      $type: "telegramConstructor",
+      constructor: "InputGroupCall",
+      fields: {
+        accessHash: { $type: "long", value: "90071992547409941" },
+        id: { $type: "long", value: "90071992547409940" },
+      },
     });
   });
 
