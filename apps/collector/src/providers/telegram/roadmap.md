@@ -170,18 +170,22 @@ validated against real GramJS response shapes.
   - [ ] Cover full, empty, pending, and unsupported webpage constructors with a
         sanitized real fixture and deterministic normalization tests.
 - [ ] Support `MessageMediaPaidMedia` without purchasing or unlocking content:
-  - [ ] Normalize the Stars price, item count, and an explicit per-item
+  - [x] Normalize the Stars price, item count, and an explicit per-item
         `lockedPreview | availableMedia` state.
-  - [ ] Preserve preview dimensions, optional video duration, and inline
+  - [x] Preserve preview dimensions, optional video duration, and inline
         stripped/cached thumbnail bytes returned in
         `MessageExtendedMediaPreview`.
-  - [ ] Recursively normalize `MessageExtendedMedia.media` when Telegram has
+  - [x] Recursively normalize `MessageExtendedMedia.media` when Telegram has
         already made the full photo/document available, and emit its files
         through the ordinary discovery pipeline.
-  - [ ] Never invoke a purchase/unlock operation automatically and never report
+  - [x] Never invoke a purchase/unlock operation automatically and never report
         preview-only paid media as fully preserved.
-  - [ ] Include price and meaningful item metadata in semantic hashing while
+  - [x] Include price and meaningful item metadata in semantic hashing while
         excluding refreshable access hashes/file references.
+  - [ ] Define a recursive `TelegramSemanticMedia` projection and use it as the
+        return type of semantic-media selection instead of `unknown`, so nested
+        paid media remains type-checked and operational file metadata cannot be
+        included in semantic hashes accidentally.
   - [ ] Add sanitized fixtures for preview-only, mixed, and fully available
         paid media, including nullable preview fields and multiple items.
 - [ ] Preserve downloadable Telegram document thumbnails as file candidates:

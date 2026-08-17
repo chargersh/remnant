@@ -120,6 +120,7 @@ export interface TelegramMessageFileDiscovery {
   readonly file: TelegramFileCandidate;
   readonly source: {
     readonly mediaRole: "primary" | "videoCover";
+    readonly paidMediaItemIndex?: number;
     readonly peer: TelegramPeer;
     readonly telegramMessageId: number;
     readonly type: "messageMedia";
@@ -152,6 +153,35 @@ export interface TelegramDocumentMedia {
   readonly videoCoverPhotoId?: string;
 }
 
+export interface TelegramPaidMediaPreview {
+  readonly height?: number;
+  readonly state: "lockedPreview";
+  readonly telegramConstructor: string;
+  readonly thumbnail?: TelegramPhotoSize;
+  readonly videoDurationSeconds?: number;
+  readonly width?: number;
+}
+
+export type TelegramPaidMediaItem =
+  | TelegramPaidMediaPreview
+  | {
+      readonly media?: TelegramMedia;
+      readonly state: "availableMedia";
+      readonly telegramConstructor: string;
+    }
+  | {
+      readonly state: "unsupported";
+      readonly telegramConstructor: string;
+    };
+
+export interface TelegramPaidMedia {
+  readonly itemCount: number;
+  readonly items: readonly TelegramPaidMediaItem[];
+  readonly starsAmount: string;
+  readonly telegramConstructor: string;
+  readonly telegramType: "paidMedia";
+}
+
 export interface TelegramEphemeralMedia {
   readonly mode: "timed" | "viewOnce";
   readonly preservationResult: "pending";
@@ -160,6 +190,7 @@ export interface TelegramEphemeralMedia {
 
 export type TelegramMedia =
   | TelegramDocumentMedia
+  | TelegramPaidMedia
   | TelegramPhotoMedia
   | {
       readonly description?: string;
@@ -376,6 +407,7 @@ export interface TelegramNormalizationWarning {
     | "emptyPhoto"
     | "unsupportedEntity"
     | "unsupportedMedia"
+    | "unsupportedPaidMediaItem"
     | "unsupportedPhoneCallDiscardReason"
     | "unsupportedServiceAction";
   readonly telegramConstructor: string;

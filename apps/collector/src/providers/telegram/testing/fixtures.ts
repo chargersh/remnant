@@ -78,6 +78,44 @@ export const makePhotoMessageFixture = (ttlSeconds?: number) =>
     peerId: new Api.PeerUser({ userId: bigInt(84) }),
   });
 
+export const makePaidMediaMessageFixture = (
+  extendedMedia: Api.TypeMessageExtendedMedia[] = [
+    new Api.MessageExtendedMediaPreview({
+      h: 2560,
+      thumb: new Api.PhotoStrippedSize({
+        bytes: Buffer.from([1, 2, 3]),
+        type: "i",
+      }),
+      w: 1920,
+    }),
+    new Api.MessageExtendedMediaPreview({
+      h: 2208,
+      thumb: new Api.PhotoStrippedSize({
+        bytes: Buffer.from([4, 5]),
+        type: "i",
+      }),
+      w: 1242,
+    }),
+    new Api.MessageExtendedMediaPreview({
+      h: 2208,
+      thumb: new Api.PhotoStrippedSize({ bytes: Buffer.from([6]), type: "i" }),
+      w: 1242,
+    }),
+  ],
+  starsAmount = "88"
+) =>
+  new Api.Message({
+    date: TEST_DATE_SECONDS,
+    fromId: new Api.PeerChannel({ channelId: bigInt(7) }),
+    id: 107,
+    media: new Api.MessageMediaPaidMedia({
+      extendedMedia,
+      starsAmount: bigInt(starsAmount),
+    }),
+    message: "paid media",
+    peerId: new Api.PeerChannel({ channelId: bigInt(7) }),
+  });
+
 export const makeServiceMessageFixture = () =>
   new Api.MessageService({
     action: new Api.MessageActionChatEditTitle({ title: "New title" }),

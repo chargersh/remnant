@@ -10,7 +10,7 @@ const toHex = (bytes: Uint8Array) =>
 
 const selectSemanticMedia = (
   media: Extract<TelegramMessage, { kind: "message" }>["media"]
-) => {
+): unknown => {
   if (media?.telegramType === "photo") {
     const { primaryFile: _primaryFile, ...semanticMedia } = media;
     return semanticMedia;
@@ -23,6 +23,17 @@ const selectSemanticMedia = (
       ...semanticMedia
     } = media;
     return semanticMedia;
+  }
+
+  if (media?.telegramType === "paidMedia") {
+    return {
+      ...media,
+      items: media.items.map((item) =>
+        item.state === "availableMedia" && item.media !== undefined
+          ? { ...item, media: selectSemanticMedia(item.media) }
+          : item
+      ),
+    };
   }
 
   return media;

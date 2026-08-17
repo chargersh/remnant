@@ -166,11 +166,12 @@ export const normalizeTelegramMessageContent = Effect.fn(
   const reply = yield* normalizeReply(source.replyTo);
   const forward = yield* normalizeForward(source.fwdFrom);
   const discoveredFiles = media.files.map(
-    ({ file, mediaRole }) =>
+    ({ file, mediaRole, paidMediaItemIndex }) =>
       ({
         file,
         source: {
           mediaRole,
+          ...(paidMediaItemIndex === undefined ? {} : { paidMediaItemIndex }),
           peer,
           telegramMessageId: source.id,
           type: "messageMedia",

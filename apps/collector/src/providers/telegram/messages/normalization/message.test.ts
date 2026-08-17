@@ -8,6 +8,7 @@ import {
   makeDocumentMessageFixture,
   makeEmptyMessageFixture,
   makeGroupCallServiceMessageFixture,
+  makePaidMediaMessageFixture,
   makePhoneCallServiceMessageFixture,
   makePhotoMessageFixture,
   makeServiceMessageFixture,
@@ -27,6 +28,16 @@ const runNormalize = (source: Parameters<typeof normalizeTelegramMessage>[0]) =>
       observedAt,
     }).pipe(Effect.provide(BunCrypto.layer))
   );
+
+const requireDocumentMedia = (
+  source: ReturnType<typeof makeDocumentMessageFixture>
+) => {
+  if (!(source.media instanceof Api.MessageMediaDocument)) {
+    throw new Error("Expected document media fixture");
+  }
+
+  return source.media;
+};
 
 describe("normalizeTelegramMessage", () => {
   test("preserves text entity UTF-16 offsets and long identifiers", async () => {
@@ -424,6 +435,129 @@ describe("normalizeTelegramMessage", () => {
         },
       },
     });
+  });
+
+  test("normalizes observed paid-media previews without unlocking them", async () => {
+    const result = await runNormalize(makePaidMediaMessageFixture());
+
+    expect(result.message).toMatchObject({
+      kind: "message",
+      media: {
+        itemCount: 3,
+        items: [
+          {
+            height: 2560,
+            state: "lockedPreview",
+            telegramConstructor: "MessageExtendedMediaPreview",
+            thumbnail: {
+              bytesBase64: "AQID",
+              size: 3,
+              telegramConstructor: "PhotoStrippedSize",
+              type: "i",
+            },
+            width: 1920,
+          },
+          { height: 2208, state: "lockedPreview", width: 1242 },
+          { height: 2208, state: "lockedPreview", width: 1242 },
+        ],
+        starsAmount: "88",
+        telegramConstructor: "MessageMediaPaidMedia",
+        telegramType: "paidMedia",
+      },
+    });
+    expect(result.discoveredFiles).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("preserves paid video previews, cached bytes, and nullable fields", async () => {
+    const nullablePreview = new Api.MessageExtendedMediaPreview({
+      h: 720,
+      thumb: new Api.PhotoCachedSize({
+        bytes: Buffer.from([7, 8, 9]),
+        h: 90,
+        type: "m",
+        w: 160,
+      }),
+      videoDuration: 12,
+      w: 1280,
+    });
+    Reflect.set(nullablePreview, "h", null);
+    Reflect.set(nullablePreview, "w", null);
+    const result = await runNormalize(
+      makePaidMediaMessageFixture([nullablePreview])
+    );
+
+    expect(result.message).toMatchObject({
+      media: {
+        items: [
+          {
+            state: "lockedPreview",
+            thumbnail: {
+              bytesBase64: "BwgJ",
+              height: 90,
+              size: 3,
+              telegramConstructor: "PhotoCachedSize",
+              type: "m",
+              width: 160,
+            },
+            videoDurationSeconds: 12,
+          },
+        ],
+        telegramType: "paidMedia",
+      },
+    });
+    expect(result.message).not.toHaveProperty("media.items.0.height");
+    expect(result.message).not.toHaveProperty("media.items.0.width");
+  });
+
+  test("normalizes available paid media and discovers downloadable files", async () => {
+    const preview = new Api.MessageExtendedMediaPreview({ h: 480, w: 640 });
+    const firstDocument = requireDocumentMedia(makeDocumentMessageFixture());
+    const refreshedDocument = requireDocumentMedia(
+      makeDocumentMessageFixture(undefined, {
+        accessHash: bigInt(2),
+        fileReference: Buffer.from([9, 8, 7]),
+      })
+    );
+    const mixed = await runNormalize(
+      makePaidMediaMessageFixture([
+        preview,
+        new Api.MessageExtendedMedia({ media: firstDocument }),
+      ])
+    );
+    const available = await runNormalize(
+      makePaidMediaMessageFixture([
+        new Api.MessageExtendedMedia({ media: firstDocument }),
+      ])
+    );
+    const refreshed = await runNormalize(
+      makePaidMediaMessageFixture([
+        new Api.MessageExtendedMedia({ media: refreshedDocument }),
+      ])
+    );
+
+    expect(mixed.message).toMatchObject({
+      media: {
+        itemCount: 2,
+        items: [
+          { state: "lockedPreview" },
+          {
+            media: { telegramType: "document" },
+            state: "availableMedia",
+            telegramConstructor: "MessageExtendedMedia",
+          },
+        ],
+        telegramType: "paidMedia",
+      },
+    });
+    expect(mixed.discoveredFiles).toEqual([
+      expect.objectContaining({
+        source: expect.objectContaining({ paidMediaItemIndex: 1 }),
+      }),
+    ]);
+    expect(available.discoveredFiles).toHaveLength(1);
+    expect(available.discoveredFiles).not.toEqual(refreshed.discoveredFiles);
+    expect(available.semanticHash).toBe(refreshed.semanticHash);
   });
 
   test("propagates warnings from unsupported reply quote entities", async () => {

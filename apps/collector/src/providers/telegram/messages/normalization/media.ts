@@ -9,6 +9,8 @@ import type {
   TelegramFileCandidate,
   TelegramMedia,
   TelegramNormalizationWarning,
+  TelegramPaidMedia,
+  TelegramPaidMediaItem,
   TelegramPhotoMedia,
   TelegramPhotoSize,
 } from "@/providers/telegram/messages/contracts";
@@ -18,6 +20,7 @@ const VIEW_ONCE_TTL_SECONDS = 0x7f_ff_ff_ff;
 interface TelegramMediaFileCandidate {
   readonly file: TelegramFileCandidate;
   readonly mediaRole: "primary" | "videoCover";
+  readonly paidMediaItemIndex?: number;
 }
 
 const normalizeEphemeral = (
@@ -293,6 +296,89 @@ const normalizeWebPage = (
   });
 };
 
+const normalizePaidMediaPreview = (
+  item: Api.MessageExtendedMediaPreview
+): TelegramPaidMediaItem => ({
+  ...(item.h === undefined || item.h === null ? {} : { height: item.h }),
+  state: "lockedPreview",
+  telegramConstructor: item.className,
+  ...(item.thumb === undefined || item.thumb === null
+    ? {}
+    : { thumbnail: normalizePhotoSize(item.thumb) }),
+  ...(item.videoDuration === undefined || item.videoDuration === null
+    ? {}
+    : { videoDurationSeconds: item.videoDuration }),
+  ...(item.w === undefined || item.w === null ? {} : { width: item.w }),
+});
+
+interface NormalizedPaidMediaItem {
+  readonly files: readonly TelegramMediaFileCandidate[];
+  readonly item: TelegramPaidMediaItem;
+  readonly warnings: readonly TelegramNormalizationWarning[];
+}
+
+const normalizePaidMediaItem = (
+  item: Api.TypeMessageExtendedMedia,
+  itemIndex: number
+): NormalizedPaidMediaItem => {
+  const telegramConstructor = item.className;
+
+  if (item instanceof Api.MessageExtendedMediaPreview) {
+    return {
+      files: [],
+      item: normalizePaidMediaPreview(item),
+      warnings: [],
+    };
+  }
+
+  if (item instanceof Api.MessageExtendedMedia) {
+    const nested = normalizeTelegramMedia(item.media);
+
+    return {
+      files: nested.files.map((candidate) => ({
+        ...candidate,
+        paidMediaItemIndex: itemIndex,
+      })),
+      item: {
+        ...(nested.media === undefined ? {} : { media: nested.media }),
+        state: "availableMedia",
+        telegramConstructor,
+      },
+      warnings: nested.warnings,
+    };
+  }
+
+  return {
+    files: [],
+    item: { state: "unsupported", telegramConstructor },
+    warnings: [
+      {
+        code: "unsupportedPaidMediaItem",
+        telegramConstructor,
+      },
+    ],
+  };
+};
+
+const normalizePaidMedia = (
+  source: Api.MessageMediaPaidMedia
+): TelegramMediaNormalizationResult => {
+  const normalizedItems = source.extendedMedia.map(normalizePaidMediaItem);
+  const items = normalizedItems.map(({ item }) => item);
+
+  return {
+    files: normalizedItems.flatMap(({ files }) => files),
+    media: {
+      itemCount: items.length,
+      items,
+      starsAmount: source.starsAmount.toString(),
+      telegramConstructor: source.className,
+      telegramType: "paidMedia",
+    } satisfies TelegramPaidMedia,
+    warnings: normalizedItems.flatMap(({ warnings }) => warnings),
+  };
+};
+
 const normalizeNonFileMedia = (
   source: Exclude<
     Api.TypeMessageMedia,
@@ -349,6 +435,10 @@ const normalizeNonFileMedia = (
 
   if (source instanceof Api.MessageMediaWebPage) {
     return normalizeWebPage(source);
+  }
+
+  if (source instanceof Api.MessageMediaPaidMedia) {
+    return normalizePaidMedia(source);
   }
 
   return {
