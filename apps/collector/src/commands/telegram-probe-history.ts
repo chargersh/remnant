@@ -18,9 +18,9 @@ import {
   getTelegramDialogs,
   type TelegramDialog,
 } from "@/providers/telegram/dialogs/dialogs";
-import { TelegramHistory } from "@/providers/telegram/messages/fetch-history";
+import { TelegramHistory } from "@/providers/telegram/messages/history/fetch-page";
+import { normalizeTelegramHistoryPage } from "@/providers/telegram/messages/history/normalize-page";
 import { normalizeTelegramMessage } from "@/providers/telegram/messages/normalization/message";
-import { normalizeTelegramHistoryPage } from "@/providers/telegram/messages/normalize-page";
 import { encodeTelegramRawValue } from "@/providers/telegram/serialization/raw-value";
 import packageJson from "../../package.json";
 

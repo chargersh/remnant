@@ -6,7 +6,7 @@ import {
   makeDocumentMessageFixture,
   makeTextMessageFixture,
 } from "@/providers/telegram/testing/fixtures";
-import { decodeTelegramHistoryPage } from "./fetch-history";
+import { decodeTelegramHistoryPage } from "./fetch-page";
 import { normalizeTelegramHistoryPage } from "./normalize-page";
 
 describe("normalizeTelegramHistoryPage", () => {

@@ -8,7 +8,7 @@ import {
   makeEmptyMessageFixture,
   makeTextMessageFixture,
 } from "@/providers/telegram/testing/fixtures";
-import { decodeTelegramHistoryPage, TelegramHistory } from "./fetch-history";
+import { decodeTelegramHistoryPage, TelegramHistory } from "./fetch-page";
 
 describe("decodeTelegramHistoryPage", () => {
   test("retains estimate metadata and derives the next older cursor", async () => {
