@@ -51,6 +51,7 @@ coverage
 todo.md
 *.tgz
 .cache
+apps/collector/.artifacts
 tmp
 temp
 .data

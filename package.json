@@ -34,7 +34,8 @@
     "dev:collector": "turbo -F collector dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @remnant/backend dev",
-    "dev:setup": "turbo -F @remnant/backend dev:setup"
+    "dev:setup": "turbo -F @remnant/backend dev:setup",
+    "telegram:probe-history": "bun run --cwd apps/collector probe-history"
   },
   "dependencies": {
     "@remnant/env": "workspace:*",
