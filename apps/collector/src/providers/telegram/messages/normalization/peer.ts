@@ -1,6 +1,6 @@
 import { Data, Effect } from "effect";
 import { Api } from "telegram";
-import type { TelegramPeer } from "./message-contracts";
+import type { TelegramPeer } from "@/providers/telegram/messages/contracts";
 
 export class TelegramPeerNormalizationError extends Data.TaggedError(
   "TelegramPeerNormalizationError"

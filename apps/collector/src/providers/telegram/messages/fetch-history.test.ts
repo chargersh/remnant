@@ -3,12 +3,12 @@ import bigInt from "big-integer";
 import { Effect, Exit, Layer, Redacted } from "effect";
 import { Api, type TelegramClient as GramJsTelegramClient } from "telegram";
 import { BadRequestError, ReadCancelledError } from "telegram/errors";
-import { TelegramClient } from "./client";
-import { decodeTelegramHistoryPage, TelegramHistory } from "./history";
+import { TelegramClient } from "@/providers/telegram/client/client";
 import {
   makeEmptyMessageFixture,
   makeTextMessageFixture,
-} from "./test-fixtures";
+} from "@/providers/telegram/testing/fixtures";
+import { decodeTelegramHistoryPage, TelegramHistory } from "./fetch-history";
 
 describe("decodeTelegramHistoryPage", () => {
   test("retains estimate metadata and derives the next older cursor", async () => {

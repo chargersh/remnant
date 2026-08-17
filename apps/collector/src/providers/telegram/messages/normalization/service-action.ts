@@ -2,7 +2,7 @@ import { Api } from "telegram";
 import type {
   TelegramNormalizationWarning,
   TelegramServiceAction,
-} from "./message-contracts";
+} from "@/providers/telegram/messages/contracts";
 
 export const normalizeTelegramServiceAction = (
   action: Api.TypeMessageAction

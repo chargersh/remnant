@@ -2,12 +2,12 @@ import bigInt from "big-integer";
 import { Context, Data, Effect, Layer } from "effect";
 import { Api } from "telegram";
 import type { EntityLike } from "telegram/define";
-import { TelegramClient } from "./client";
+import { TelegramClient } from "@/providers/telegram/client/client";
 import {
   classifyTelegramError,
   type TelegramFailure,
   type TelegramSafePeerContext,
-} from "./error-classifier";
+} from "@/providers/telegram/error-classifier";
 
 export const TELEGRAM_HISTORY_PAGE_MAX_SIZE = 100;
 

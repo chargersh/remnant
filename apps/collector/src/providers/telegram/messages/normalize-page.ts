@@ -1,19 +1,19 @@
 import { Effect } from "effect";
-import type { TelegramHistoryPage } from "./history";
-import type {
-  TelegramMessageEnvelope,
-  TelegramMessageFileDiscovery,
-  TelegramNormalizationWarning,
-} from "./message-contracts";
-import {
-  type NormalizeTelegramMessageOptions,
-  normalizeTelegramMessage,
-} from "./message-normalizer";
 import {
   encodeTelegramRawValue,
   TELEGRAM_RAW_FORMAT_VERSION,
   type TelegramRawValue,
-} from "./raw-encoder";
+} from "@/providers/telegram/serialization/raw-value";
+import type {
+  TelegramMessageEnvelope,
+  TelegramMessageFileDiscovery,
+  TelegramNormalizationWarning,
+} from "./contracts";
+import type { TelegramHistoryPage } from "./fetch-history";
+import {
+  type NormalizeTelegramMessageOptions,
+  normalizeTelegramMessage,
+} from "./normalization/message";
 
 const NORMALIZATION_CONCURRENCY = 4;
 

@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { BunCrypto } from "@effect/platform-bun";
 import { Effect } from "effect";
 import { Api } from "telegram";
-import { decodeTelegramHistoryPage } from "./history";
-import { normalizeTelegramHistoryPage } from "./history-page-normalizer";
 import {
   makeDocumentMessageFixture,
   makeTextMessageFixture,
-} from "./test-fixtures";
+} from "@/providers/telegram/testing/fixtures";
+import { decodeTelegramHistoryPage } from "./fetch-history";
+import { normalizeTelegramHistoryPage } from "./normalize-page";
 
 describe("normalizeTelegramHistoryPage", () => {
   test("prepares one ordered raw and normalized preservation page", async () => {

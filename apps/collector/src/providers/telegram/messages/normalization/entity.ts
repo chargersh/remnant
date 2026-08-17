@@ -3,7 +3,7 @@ import type {
   TelegramEntityType,
   TelegramMessageEntity,
   TelegramNormalizationWarning,
-} from "./message-contracts";
+} from "@/providers/telegram/messages/contracts";
 
 const simpleEntityTypes = new Map<string, TelegramEntityType>([
   ["MessageEntityBankCard", "bankCard"],

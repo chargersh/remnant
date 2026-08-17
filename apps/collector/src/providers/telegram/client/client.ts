@@ -4,7 +4,7 @@ import { StringSession } from "telegram/sessions";
 import {
   classifyTelegramError,
   type TelegramFailure,
-} from "./error-classifier";
+} from "@/providers/telegram/error-classifier";
 
 type TelegramClientParams = ConstructorParameters<
   typeof GramJsTelegramClient

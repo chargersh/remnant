@@ -1,6 +1,6 @@
 import bigInt from "big-integer";
 import { Api } from "telegram";
-import type { TelegramFileCandidate } from "./message-contracts";
+import type { TelegramFileCandidate } from "@/providers/telegram/messages/contracts";
 
 export const makeTelegramInputFileLocation = (
   candidate: TelegramFileCandidate

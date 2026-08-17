@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Api } from "telegram";
+import type { TelegramFileCandidate } from "@/providers/telegram/messages/contracts";
 import { makeTelegramInputFileLocation } from "./file-location";
-import type { TelegramFileCandidate } from "./message-contracts";
 
 const common = {
   accessHash: "90071992547409931",

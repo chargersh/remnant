@@ -3,8 +3,8 @@ import { env } from "@remnant/env/collector";
 import { Console, Data, Effect, Redacted } from "effect";
 import { Command, Prompt } from "effect/unstable/cli";
 import { StringSession } from "telegram/sessions";
-import packageJson from "../package.json";
-import { makeTelegramClientResource } from "./telegram/client";
+import { makeTelegramClientResource } from "@/providers/telegram/client/client";
+import packageJson from "../../package.json";
 
 const E164_PHONE_NUMBER = /^\+[1-9]\d{6,14}$/;
 

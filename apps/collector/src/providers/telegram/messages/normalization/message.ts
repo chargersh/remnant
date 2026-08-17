@@ -1,20 +1,20 @@
 import { Effect } from "effect";
 import { Api } from "telegram";
-import { normalizeTelegramEntities } from "./entity-normalizer";
-import { normalizeTelegramMedia } from "./media-normalizer";
 import type {
   TelegramForward,
   TelegramMessage,
   TelegramMessageEnvelope,
   TelegramMessageFileDiscovery,
   TelegramReply,
-} from "./message-contracts";
-import { normalizeTelegramPeer } from "./peer-normalizer";
+} from "@/providers/telegram/messages/contracts";
 import {
   hashTelegramSemanticContent,
   TELEGRAM_SEMANTIC_HASH_VERSION,
-} from "./semantic-hash";
-import { normalizeTelegramServiceAction } from "./service-action-normalizer";
+} from "@/providers/telegram/serialization/semantic-hash";
+import { normalizeTelegramEntities } from "./entity";
+import { normalizeTelegramMedia } from "./media";
+import { normalizeTelegramPeer } from "./peer";
+import { normalizeTelegramServiceAction } from "./service-action";
 
 export interface NormalizeTelegramMessageOptions {
   readonly accountPeerId: string;

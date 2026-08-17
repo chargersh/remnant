@@ -3,7 +3,7 @@ import bigInt from "big-integer";
 import { Effect } from "effect";
 import { Api } from "telegram";
 import { encodeCanonicalJson } from "./canonical-json";
-import { encodeTelegramRawValue } from "./raw-encoder";
+import { encodeTelegramRawValue } from "./raw-value";
 
 describe("encodeTelegramRawValue", () => {
   test("encodes Telegram constructors, longs, bytes, and undefined", async () => {

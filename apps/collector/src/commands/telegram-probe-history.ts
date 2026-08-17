@@ -4,22 +4,25 @@ import bigInt from "big-integer";
 import { Cause, Console, Effect, Exit, FileSystem, Layer, Path } from "effect";
 import { Command, Prompt } from "effect/unstable/cli";
 import { Api } from "telegram";
-import packageJson from "../package.json";
 import {
   type TelegramClient,
   type TelegramClientError,
   telegramClientLayer,
-} from "./telegram/client";
-import { getTelegramDialogs, type TelegramDialog } from "./telegram/dialogs";
-import { TelegramHistory } from "./telegram/history";
-import { normalizeTelegramHistoryPage } from "./telegram/history-page-normalizer";
-import { normalizeTelegramMessage } from "./telegram/message-normalizer";
-import { encodeTelegramRawValue } from "./telegram/raw-encoder";
+} from "@/providers/telegram/client/client";
 import {
   type TelegramSessionNotConfiguredError,
   TelegramSessionStore,
   telegramSessionStoreLayer,
-} from "./telegram/session-store";
+} from "@/providers/telegram/client/session-store";
+import {
+  getTelegramDialogs,
+  type TelegramDialog,
+} from "@/providers/telegram/dialogs/dialogs";
+import { TelegramHistory } from "@/providers/telegram/messages/fetch-history";
+import { normalizeTelegramMessage } from "@/providers/telegram/messages/normalization/message";
+import { normalizeTelegramHistoryPage } from "@/providers/telegram/messages/normalize-page";
+import { encodeTelegramRawValue } from "@/providers/telegram/serialization/raw-value";
+import packageJson from "../../package.json";
 
 const DIALOG_DISCOVERY_LIMIT = 100;
 const HISTORY_LIMIT = 10;

@@ -1,11 +1,11 @@
 import { Data, Effect, Option } from "effect";
 import { Api } from "telegram";
 import type { Dialog } from "telegram/tl/custom/dialog";
-import { TelegramClient } from "./client";
+import { TelegramClient } from "@/providers/telegram/client/client";
 import {
   classifyTelegramError,
   type TelegramFailure,
-} from "./error-classifier";
+} from "@/providers/telegram/error-classifier";
 
 interface TelegramDialogBase {
   readonly archived: boolean;

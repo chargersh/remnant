@@ -2,7 +2,7 @@ import { Api } from "telegram";
 import type {
   TelegramDocumentAttributes,
   TelegramDocumentPresentation,
-} from "./message-contracts";
+} from "@/providers/telegram/messages/contracts";
 
 const IMAGE_MIME_TYPES = new Set([
   "image/avif",

@@ -3,13 +3,7 @@ import { env } from "@remnant/env/collector";
 import { ConvexHttpClient } from "convex/browser";
 import { ConvexError } from "convex/values";
 import { Data, Effect, Schedule } from "effect";
-import { TelegramClient } from "../telegram/client";
-import type { TelegramDialog } from "../telegram/dialogs";
-import { getTelegramDialogs } from "../telegram/dialogs";
-import {
-  classifyTelegramError,
-  type TelegramFailure,
-} from "../telegram/error-classifier";
+import type { TelegramDialog } from "@/providers/telegram/dialogs/dialogs";
 
 const dialogBatchSize = 100;
 const convex = new ConvexHttpClient(env.CONVEX_URL);
@@ -25,12 +19,6 @@ export class ConvexDialogSyncError extends Data.TaggedError(
 )<{
   readonly cause: unknown;
   readonly operation: "complete" | "ingestBatch" | "start";
-}> {}
-
-export class TelegramAccountLookupError extends Data.TaggedError(
-  "TelegramAccountLookupError"
-)<{
-  readonly failure: TelegramFailure;
 }> {}
 
 const isRetryableCause = (cause: unknown) => {
@@ -122,37 +110,3 @@ export const syncTelegramDialogs = Effect.fn("ConvexDialogSync.sync")(
     };
   }
 );
-
-export const collectAndSyncTelegramDialogs = Effect.fn(
-  "ConvexDialogSync.collectAndSync"
-)(function* () {
-  const client = yield* TelegramClient;
-  const account = yield* Effect.tryPromise({
-    try: () => client.getMe(),
-    catch: (cause) =>
-      classifyTelegramError(cause, {
-        operation: "selfLookup",
-        requestConstructor: "users.GetUsers",
-      }),
-  }).pipe(
-    Effect.catch((failure) =>
-      failure.summary.category === "cancelled"
-        ? Effect.interrupt
-        : new TelegramAccountLookupError({ failure })
-    )
-  );
-  const displayName = [account.firstName, account.lastName]
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
-    .join(" ");
-  const dialogs = yield* getTelegramDialogs();
-
-  return yield* syncTelegramDialogs(
-    {
-      displayName: displayName || account.username || account.id.toString(),
-      telegramAccountId: account.id.toString(),
-      ...(account.username === undefined ? {} : { username: account.username }),
-    },
-    dialogs
-  );
-});

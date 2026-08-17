@@ -2,7 +2,7 @@ import { Api } from "telegram";
 import {
   classifyTelegramDocument,
   normalizeTelegramDocumentAttributes,
-} from "./media-classifier";
+} from "@/providers/telegram/media/classify-document";
 import type {
   TelegramDocumentMedia,
   TelegramEphemeralMedia,
@@ -11,7 +11,7 @@ import type {
   TelegramNormalizationWarning,
   TelegramPhotoMedia,
   TelegramPhotoSize,
-} from "./message-contracts";
+} from "@/providers/telegram/messages/contracts";
 
 const VIEW_ONCE_TTL_SECONDS = 0x7f_ff_ff_ff;
 

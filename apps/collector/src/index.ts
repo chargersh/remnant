@@ -1,17 +1,17 @@
 import { BunRuntime } from "@effect/platform-bun";
 import { env } from "@remnant/env/collector";
 import { Effect, Layer } from "effect";
-import { collectAndSyncTelegramDialogs } from "./convex/dialog-sync";
 import {
   type TelegramClient,
   type TelegramClientError,
   telegramClientLayer,
-} from "./telegram/client";
+} from "@/providers/telegram/client/client";
 import {
   type TelegramSessionNotConfiguredError,
   TelegramSessionStore,
   telegramSessionStoreLayer,
-} from "./telegram/session-store";
+} from "@/providers/telegram/client/session-store";
+import { collectAndSyncTelegramDialogs } from "@/workflows/telegram/sync-dialogs";
 
 const telegramClientFromSessionLayer: Layer.Layer<
   TelegramClient,

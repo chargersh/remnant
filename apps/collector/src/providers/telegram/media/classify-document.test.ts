@@ -3,7 +3,7 @@ import { Api } from "telegram";
 import {
   classifyTelegramDocument,
   normalizeTelegramDocumentAttributes,
-} from "./media-classifier";
+} from "./classify-document";
 
 const classify = (
   attributes: readonly Api.TypeDocumentAttribute[],

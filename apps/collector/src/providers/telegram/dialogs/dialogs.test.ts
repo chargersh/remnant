@@ -4,7 +4,7 @@ import { Effect, Layer, Redacted } from "effect";
 import type { TelegramClient as GramJsTelegramClient } from "telegram";
 import { UnauthorizedError } from "telegram/errors";
 import { Api } from "telegram/tl";
-import { TelegramClient } from "./client";
+import { TelegramClient } from "@/providers/telegram/client/client";
 import { getTelegramDialogs } from "./dialogs";
 
 describe("getTelegramDialogs", () => {

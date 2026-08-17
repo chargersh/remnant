@@ -4,16 +4,16 @@ import bigInt from "big-integer";
 import { Effect } from "effect";
 import { Api } from "telegram";
 import {
-  normalizeTelegramMessage,
-  normalizeTelegramMessageContent,
-} from "./message-normalizer";
-import {
   makeDocumentMessageFixture,
   makeEmptyMessageFixture,
   makePhotoMessageFixture,
   makeServiceMessageFixture,
   makeTextMessageFixture,
-} from "./test-fixtures";
+} from "@/providers/telegram/testing/fixtures";
+import {
+  normalizeTelegramMessage,
+  normalizeTelegramMessageContent,
+} from "./message";
 
 const observedAt = 1_800_000_000_000;
 const SHA_256_HEX_PATTERN = /^[a-f0-9]{64}$/;

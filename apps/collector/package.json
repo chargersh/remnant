@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "auth": "bun run src/auth.ts",
+    "auth": "bun run src/commands/telegram-auth.ts",
     "sync-dialogs": "bun run src/index.ts",
     "typecheck": "tsc --noEmit",
     "dev": "bun run src/index.ts",
     "test": "bun test src",
-    "probe-history": "bun run src/probe-history.ts"
+    "probe-history": "bun run src/commands/telegram-probe-history.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-beta.83",

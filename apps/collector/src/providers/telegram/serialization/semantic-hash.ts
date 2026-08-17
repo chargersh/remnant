@@ -1,7 +1,7 @@
 import { Crypto, Effect } from "effect";
+import type { TelegramMessage } from "@/providers/telegram/messages/contracts";
 import { encodeCanonicalJson } from "./canonical-json";
-import type { TelegramMessage } from "./message-contracts";
-import { encodeTelegramRawValue } from "./raw-encoder";
+import { encodeTelegramRawValue } from "./raw-value";
 
 export const TELEGRAM_SEMANTIC_HASH_VERSION = 1 as const;
 
